@@ -1,0 +1,8 @@
+erofs-utils compact index block lookup
+Copyright (C) 2018-2019 HUAWEI, Inc.
+Created by Gao Xiang; modified by Huang Jianan.
+
+The compact index lookup in src/windows/image-tools/Erofs.cpp is adapted to C++ from:
+https://android.googlesource.com/platform/external/erofs-utils/+/6f08b2a7be70965b4400ea1d47ea9a043780f6b9/lib/zmap.c
+
+Licensed under Apache-2.0; see LICENSE.

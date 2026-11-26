@@ -1,0 +1,64 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.trebledot.stone.cit">
+    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="32" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <application android:name="com.trebledot.stone.cit.components.ComponentApplication"
+        android:label="@string/app_name" android:icon="@drawable/application_icon" android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:usesCleartextTraffic="true">
+        <activity android:name=".CitActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".InputActivity" android:exported="false" />
+        <activity android:name="com.trebledot.stone.cit.components.ComponentActivity" android:exported="false" />
+        <activity android:name="com.trebledot.stone.cit.documents.DocumentsActivity" android:exported="false" />
+        <activity android:name="com.trebledot.stone.cit.gles.GlesActivity" android:exported="false" />
+        <activity android:name="com.trebledot.stone.cit.notes.NotesActivity" android:exported="false" />
+        <activity android:name="com.trebledot.stone.cit.webview.WebActivity" android:exported="false" />
+        <service android:name="com.trebledot.stone.cit.components.ComponentService" android:exported="false" android:foregroundServiceType="dataSync">
+            <intent-filter>
+                <action android:name="com.trebledot.stone.cit.components.SERVICE_QUERY" />
+            </intent-filter>
+        </service>
+        <service android:name="com.trebledot.stone.cit.components.ComponentService$Remote" android:process=":remote" android:exported="false" />
+        <service android:name="com.trebledot.stone.cit.components.ComponentService$Isolated" android:isolatedProcess="true" android:exported="false" />
+        <service android:name="com.trebledot.stone.cit.components.ComponentService$Disabled" android:enabled="false" android:exported="false" />
+        <receiver android:name="com.trebledot.stone.cit.components.ComponentReceiver" android:exported="false">
+            <intent-filter android:priority="100">
+                <action android:name="com.trebledot.stone.cit.components.ORDERED" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name="com.trebledot.stone.cit.components.ComponentReceiver$Disabled" android:enabled="false" android:exported="false" />
+        <receiver android:name="com.trebledot.stone.cit.components.InstallResultReceiver" android:exported="false" />
+        <provider android:name="com.trebledot.stone.cit.components.ComponentProvider" android:exported="false"
+            android:authorities="com.trebledot.stone.cit.components.primary;com.trebledot.stone.cit.components.alias">
+            <meta-data android:name="stone.label" android:resource="@string/app_name" />
+            <meta-data android:name="stone.enabled" android:value="true" />
+        </provider>
+        <provider android:name="com.trebledot.stone.cit.components.ComponentProvider$Disabled" android:enabled="false" android:exported="false"
+            android:authorities="com.trebledot.stone.cit.components.disabled" />
+        <provider android:name="com.trebledot.stone.cit.components.ComponentProvider$Remote" android:process=":remote"
+            android:exported="false" android:authorities="com.trebledot.stone.cit.components.remote" />
+        <provider android:name="com.trebledot.stone.cit.notes.NotesProvider" android:exported="false"
+            android:authorities="com.trebledot.stone.cit.notes.provider" />
+    </application>
+</manifest>

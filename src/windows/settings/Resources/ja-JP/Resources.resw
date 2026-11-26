@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Stone 設定</value>
+  </data>
+  <data name="SearchSettings" xml:space="preserve">
+    <value>設定とアプリを検索</value>
+  </data>
+  <data name="SystemNavigation" xml:space="preserve">
+    <value>システム管理</value>
+  </data>
+  <data name="AppsNavigation" xml:space="preserve">
+    <value>アプリ管理</value>
+  </data>
+  <data name="NotificationsNavigation" xml:space="preserve">
+    <value>通知管理</value>
+  </data>
+  <data name="PermissionsNavigation" xml:space="preserve">
+    <value>権限管理</value>
+  </data>
+  <data name="SystemDescription" xml:space="preserve">
+    <value>アプリの実行環境に使用する Android システムイメージを選択します。</value>
+  </data>
+  <data name="AppsDescription" xml:space="preserve">
+    <value>Stone にインストールした Android アプリを管理します。</value>
+  </data>
+  <data name="NotificationsDescription" xml:space="preserve">
+    <value>Android アプリの通知権限を管理します。</value>
+  </data>
+  <data name="PermissionsDescription" xml:space="preserve">
+    <value>アプリごとに通知とすべてのファイルへのアクセスを許可または取り消します。</value>
+  </data>
+  <data name="AllApps" xml:space="preserve">
+    <value>すべてのアプリ</value>
+  </data>
+  <data name="CatalogNotLoaded" xml:space="preserve">
+    <value>アプリ一覧をまだ読み込んでいません</value>
+  </data>
+  <data name="CheckImage" xml:space="preserve">
+    <value>システム管理で選択したイメージを確認してください。</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>通知</value>
+  </data>
+  <data name="NotificationGrantedDescription" xml:space="preserve">
+    <value>このアプリの通知表示を許可します。通知全体のスイッチも適用されます。</value>
+  </data>
+  <data name="Allow" xml:space="preserve">
+    <value>許可</value>
+  </data>
+  <data name="Deny" xml:space="preserve">
+    <value>許可しない</value>
+  </data>
+  <data name="StorageGrantedDescription" xml:space="preserve">
+    <value>現在の Stone データディレクトリの storage\emulated\0 に対応する /storage/emulated/0 の読み書きを許可します。他のアプリの専用ディレクトリは含まれません。</value>
+  </data>
+  <data name="DeclaredPermissions" xml:space="preserve">
+    <value>アプリが宣言した権限</value>
+  </data>
+  <data name="WelcomeTitle" xml:space="preserve">
+    <value>Stone へようこそ</value>
+  </data>
+  <data name="ChooseImage" xml:space="preserve">
+    <value>システムイメージを選択</value>
+  </data>
+  <data name="Arm64Unavailable" xml:space="preserve">
+    <value>ARM64 ART の実行バックエンドは未実装です。キャッシュ済みのアプリ一覧は表示できます。</value>
+  </data>
+  <data name="SelectImageFirst" xml:space="preserve">
+    <value>システム管理で Android システムイメージを選択してください。</value>
+  </data>
+  <data name="ReadAppsFailed" xml:space="preserve">
+    <value>現在アプリ一覧を読み込めません。</value>
+  </data>
+  <data name="ReadNotificationsFailed" xml:space="preserve">
+    <value>通知権限を読み取れません。</value>
+  </data>
+  <data name="NotificationUndeclared" xml:space="preserve">
+    <value>このアプリは通知権限を宣言していません。</value>
+  </data>
+  <data name="StorageUndeclared" xml:space="preserve">
+    <value>このアプリはすべてのファイルへのアクセス権限を宣言していません。自身の外部専用ディレクトリは引き続き読み書きできます。</value>
+  </data>
+  <data name="NoPermissions" xml:space="preserve">
+    <value>権限の宣言はありません</value>
+  </data>
+  <data name="ReadPermissionsFailed" xml:space="preserve">
+    <value>アプリの権限を読み取れません。</value>
+  </data>
+  <data name="SaveStorageFailed" xml:space="preserve">
+    <value>すべてのファイルへのアクセス権限を保存できません。</value>
+  </data>
+  <data name="SaveNotificationsFailed" xml:space="preserve">
+    <value>通知権限を保存できません。</value>
+  </data>
+  <data name="NoImage" xml:space="preserve">
+    <value>システムイメージが選択されていません</value>
+  </data>
+  <data name="NoMatchingApps" xml:space="preserve">
+    <value>一致するアプリはありません</value>
+  </data>
+  <data name="NoApps" xml:space="preserve">
+    <value>インストール済みアプリはありません</value>
+  </data>
+  <data name="TryAppName" xml:space="preserve">
+    <value>アプリ名またはパッケージ名を試してください。</value>
+  </data>
+  <data name="InstallFirstApp" xml:space="preserve">
+    <value>「APK をインストール」で Android アプリを追加してください。</value>
+  </data>
+  <data name="SearchResults" xml:space="preserve">
+    <value>検索結果</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="OpenNotificationsFailed" xml:space="preserve">
+    <value>Windows の通知設定を開けません。</value>
+  </data>
+  <data name="InstallFailed" xml:space="preserve">
+    <value>アプリをインストールできません。</value>
+  </data>
+  <data name="ChooseImageFailed" xml:space="preserve">
+    <value>Android システムイメージを選択できません。</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>バージョン {0}</value>
+  </data>
+  <data name="InstallSource" xml:space="preserve">
+    <value>インストール元：{0}</value>
+  </data>
+  <data name="ApkFile" xml:space="preserve">
+    <value>APK ファイル</value>
+  </data>
+  <data name="AppSize" xml:space="preserve">
+    <value>アプリのサイズ：{0:F1} MB</value>
+  </data>
+  <data name="Uninstall" xml:space="preserve">
+    <value>アンインストール</value>
+  </data>
+  <data name="ManagePermissions" xml:space="preserve">
+    <value>権限を管理</value>
+  </data>
+  <data name="Done" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="ManageAppFailed" xml:space="preserve">
+    <value>このアプリを管理できません。</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="Install" xml:space="preserve">
+    <value>インストール</value>
+  </data>
+  <data name="NotificationHeading" xml:space="preserve">
+    <value>{0} に通知の送信を許可しますか？</value>
+  </data>
+  <data name="PreparingInstallHeading" xml:space="preserve">
+    <value>{0} のインストールを準備中</value>
+  </data>
+  <data name="InstallHeading" xml:space="preserve">
+    <value>{0} をインストールしますか？</value>
+  </data>
+  <data name="UpdateHeading" xml:space="preserve">
+    <value>{0} を更新しますか？</value>
+  </data>
+  <data name="UninstallHeading" xml:space="preserve">
+    <value>{0} をアンインストールしますか？</value>
+  </data>
+  <data name="PreapproveHeading" xml:space="preserve">
+    <value>{0} のインストールを許可しますか？</value>
+  </data>
+  <data name="AndroidApp" xml:space="preserve">
+    <value>Android アプリ</value>
+  </data>
+  <data name="Package" xml:space="preserve">
+    <value>パッケージ：{0}</value>
+  </data>
+  <data name="RequestedBy" xml:space="preserve">
+    <value>要求元：{0}</value>
+  </data>
+  <data name="AppIcon" xml:space="preserve">
+    <value>{0} のアプリアイコン</value>
+  </data>
+  <data name="UninstallInformation" xml:space="preserve">
+    <value>アンインストール情報</value>
+  </data>
+  <data name="InstallInformation" xml:space="preserve">
+    <value>要求する権限</value>
+  </data>
+  <data name="NotificationConfirmation" xml:space="preserve">
+    <value>このアプリが Windows 経由で通知を送信することを許可します。権限は Stone 設定の通知管理でいつでも変更できます。Stone の通知全体のスイッチ、Windows の通知権限、応答不可の設定も適用されます。</value>
+  </data>
+  <data name="UninstallConfirmation" xml:space="preserve">
+    <value>このアプリとそのデータが削除されます。</value>
+  </data>
+  <data name="PreapproveConfirmation" xml:space="preserve">
+    <value>APK のダウンロードと検証後に、このアプリのインストールを許可します。アプリ情報は要求元から提供されています。</value>
+  </data>
+  <data name="UnverifiedApp" xml:space="preserve">
+    <value>このアプリを検証できないため、現在はインストールできません。</value>
+  </data>
+  <data name="UpdateConfirmation" xml:space="preserve">
+    <value>このアプリを更新します。既存のアプリデータは保持されます。</value>
+  </data>
+  <data name="InstallConfirmation" xml:space="preserve">
+    <value>このアプリを Stone にインストールします。</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>バージョン情報</value>
+  </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Stone 通知権限</value>
+  </data>
+  <data name="InstallerTitle" xml:space="preserve">
+    <value>Stone アプリインストーラー</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>{0}
+バージョン {1}</value>
+  </data>
+  <data name="ProjectHome" xml:space="preserve">
+    <value>Stone プロジェクトのホームページ</value>
+  </data>
+  <data name="ThirdPartyNotices" xml:space="preserve">
+    <value>サードパーティ製ソフトウェアに関する通知</value>
+  </data>
+  <data name="AboutApplication" xml:space="preserve">
+    <value>{0} について</value>
+  </data>
+  <data name="ReadingApk" xml:space="preserve">
+    <value>パッケージを読み込んで検証しています。しばらくお待ちください…</value>
+  </data>
+  <data name="InstallUserUnavailable" xml:space="preserve">
+    <value>インストーラーウィンドウのユーザーを特定できません。</value>
+  </data>
+  <data name="Installing" xml:space="preserve">
+    <value>インストール中です。しばらくお待ちください…</value>
+  </data>
+  <data name="UseImageFailed" xml:space="preserve">
+    <value>このシステムイメージを使用できません。</value>
+  </data>
+  <data name="RuntimeMissing" xml:space="preserve">
+    <value>Stone の実行ファイルが見つかりません。</value>
+  </data>
+  <data name="StartStoneFailed" xml:space="preserve">
+    <value>Stone を起動できません。</value>
+  </data>
+  <data name="PrepareAndroidFailed" xml:space="preserve">
+    <value>Android 環境を準備できません。システムイメージまたは Stone の実行ログを確認してください。</value>
+  </data>
+  <data name="AppCount" xml:space="preserve">
+    <value>Android アプリ {0} 件</value>
+  </data>
+  <data name="AppCountOne" xml:space="preserve">
+    <value>Android アプリ {0} 件</value>
+  </data>
+  <data name="WaitingApps" xml:space="preserve">
+    <value>アプリ情報を待機中</value>
+  </data>
+  <data name="AppIdentityChanged" xml:space="preserve">
+    <value>アプリ情報が変更されました。権限ページを開き直してください。</value>
+  </data>
+  <data name="MainWindowWindowTitleBar.Title" xml:space="preserve">
+    <value>Stone 設定</value>
+  </data>
+  <data name="MainWindowPaneToggleButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>ナビゲーションを切り替える</value>
+  </data>
+  <data name="MainWindowPaneToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>ナビゲーションを切り替える</value>
+  </data>
+  <data name="MainWindowSearchBox.PlaceholderText" xml:space="preserve">
+    <value>設定とアプリを検索</value>
+  </data>
+  <data name="MainWindowSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>設定とアプリを検索</value>
+  </data>
+  <data name="MainWindowSystemNavigation.Content" xml:space="preserve">
+    <value>システム管理</value>
+  </data>
+  <data name="MainWindowAppsNavigation.Content" xml:space="preserve">
+    <value>アプリ管理</value>
+  </data>
+  <data name="MainWindowNotificationsNavigation.Content" xml:space="preserve">
+    <value>通知管理</value>
+  </data>
+  <data name="MainWindowPermissionsNavigation.Content" xml:space="preserve">
+    <value>権限管理</value>
+  </data>
+  <data name="MainWindowPageTitle.Text" xml:space="preserve">
+    <value>アプリ管理</value>
+  </data>
+  <data name="MainWindowPageDescription.Text" xml:space="preserve">
+    <value>Stone にインストールした Android アプリを管理します。</value>
+  </data>
+  <data name="MainWindowSystemImageTextBlock.Text" xml:space="preserve">
+    <value>Android システムイメージ</value>
+  </data>
+  <data name="MainWindowChooseImageButton.Content" xml:space="preserve">
+    <value>システムイメージを変更</value>
+  </data>
+  <data name="MainWindowImageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>システムイメージは Android の実行環境を提供します。変更は次回の起動から適用され、実行中のアプリは現在の環境を使い続けます。</value>
+  </data>
+  <data name="MainWindowSystemLoadingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>システムイメージを準備中</value>
+  </data>
+  <data name="MainWindowInstalledAppsTextBlock.Text" xml:space="preserve">
+    <value>インストール済みアプリ</value>
+  </data>
+  <data name="MainWindowInstallApkTextBlock.Text" xml:space="preserve">
+    <value>APK をインストール</value>
+  </data>
+  <data name="MainWindowAppsListHeading.Text" xml:space="preserve">
+    <value>すべてのアプリ</value>
+  </data>
+  <data name="MainWindowEmptyTitle.Text" xml:space="preserve">
+    <value>アプリ一覧をまだ読み込んでいません</value>
+  </data>
+  <data name="MainWindowEmptyDescription.Text" xml:space="preserve">
+    <value>システム管理で選択したイメージを確認してください。</value>
+  </data>
+  <data name="MainWindowAppsLoadingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>アプリを読み込み中</value>
+  </data>
+  <data name="MainWindowLoadingAppsStatusTextBlock.Text" xml:space="preserve">
+    <value>アプリを読み込み中…</value>
+  </data>
+  <data name="MainWindowAllowAppNotificationsTextBlock.Text" xml:space="preserve">
+    <value>アプリの通知を許可</value>
+  </data>
+  <data name="MainWindowNotificationsControlDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Android アプリの通知表示を制御します。</value>
+  </data>
+  <data name="MainWindowAllNotifications.OffContent" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="MainWindowAllNotifications.OnContent" xml:space="preserve">
+    <value>オン</value>
+  </data>
+  <data name="MainWindowAllNotifications.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>アプリの通知を許可</value>
+  </data>
+  <data name="MainWindowWindowsNotificationsTextBlock.Text" xml:space="preserve">
+    <value>Windows の通知設定</value>
+  </data>
+  <data name="MainWindowWindowsNotificationsDescriptionTextBlock.Text" xml:space="preserve">
+    <value>このデバイスの通知権限と応答不可の設定を確認します。</value>
+  </data>
+  <data name="MainWindowOpenWindowsNotificationsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Windows の通知設定を開く</value>
+  </data>
+  <data name="MainWindowAppNotificationsTextBlock.Text" xml:space="preserve">
+    <value>アプリの通知</value>
+  </data>
+  <data name="MainWindowOnToggleSwitch.OffContent" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="MainWindowOnToggleSwitch.OnContent" xml:space="preserve">
+    <value>オン</value>
+  </data>
+  <data name="MainWindowPermissionAppSelector.Header" xml:space="preserve">
+    <value>アプリを選択</value>
+  </data>
+  <data name="MainWindowPermissionAppSelector.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>権限を管理するアプリ</value>
+  </data>
+  <data name="MainWindowPermissionEmpty.Text" xml:space="preserve">
+    <value>アプリを選択して権限を管理します。</value>
+  </data>
+  <data name="MainWindowNotificationsNavigationTextBlock.Text" xml:space="preserve">
+    <value>通知</value>
+  </data>
+  <data name="MainWindowPermissionNotificationDescription.Text" xml:space="preserve">
+    <value>このアプリの通知表示を許可します。通知全体のスイッチも適用されます。</value>
+  </data>
+  <data name="MainWindowPermissionNotifications.OffContent" xml:space="preserve">
+    <value>許可しない</value>
+  </data>
+  <data name="MainWindowPermissionNotifications.OnContent" xml:space="preserve">
+    <value>許可</value>
+  </data>
+  <data name="MainWindowPermissionNotifications.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>このアプリの通知権限</value>
+  </data>
+  <data name="MainWindowAllFilesAccessTextBlock.Text" xml:space="preserve">
+    <value>すべてのファイルへのアクセス</value>
+  </data>
+  <data name="MainWindowPermissionStorageDescription.Text" xml:space="preserve">
+    <value>現在の Stone データディレクトリの storage\emulated\0 に対応する /storage/emulated/0 の読み書きを許可します。他のアプリの専用ディレクトリは含まれません。</value>
+  </data>
+  <data name="MainWindowPermissionAllFiles.OffContent" xml:space="preserve">
+    <value>許可しない</value>
+  </data>
+  <data name="MainWindowPermissionAllFiles.OnContent" xml:space="preserve">
+    <value>許可</value>
+  </data>
+  <data name="MainWindowPermissionAllFiles.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>このアプリのすべてのファイルへのアクセス権限</value>
+  </data>
+  <data name="MainWindowPrivateStorageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>アプリ自身の Android/data/&lt;パッケージ名&gt;/files と cache は、すべてのファイルへのアクセス権限なしで読み書きできます。</value>
+  </data>
+  <data name="MainWindowDeclaredPermissionsExpander.Header" xml:space="preserve">
+    <value>アプリが宣言した権限</value>
+  </data>
+  <data name="WelcomeWindowWelcomeTitleTextBlock.Text" xml:space="preserve">
+    <value>Stone へようこそ</value>
+  </data>
+  <data name="WelcomeWindowWelcomeDescriptionTextBlock.Text" xml:space="preserve">
+    <value>システムイメージを準備して、Windows で Android アプリを使い始めましょう。</value>
+  </data>
+  <data name="WelcomeWindowChooseImageButton.Content" xml:space="preserve">
+    <value>システムイメージを選択</value>
+  </data>
+  <data name="WelcomeWindowWelcomeImageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>ダウンロード済みの system.img ファイルを使用します。</value>
+  </data>
+  <data name="WelcomeWindowPreparingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Android を準備中</value>
+  </data>
+  <data name="WelcomeWindowPreparingImageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>システムイメージを検証して準備しています。初回は時間がかかることがあります。</value>
+  </data>
+  <data name="WelcomeWindowWindowTitleBar.Title" xml:space="preserve">
+    <value>Stone へようこそ</value>
+  </data>
+  <data name="ImageDownloadTitle.Text" xml:space="preserve"><value>Android システムイメージをダウンロード</value></data>
+  <data name="ImageDownloadButton.Content" xml:space="preserve"><value>イメージをダウンロード</value></data>
+  <data name="ImageDownloadCancelButton.Content" xml:space="preserve"><value>ダウンロードをキャンセル</value></data>
+  <data name="ImageDownloadUseButton.Content" xml:space="preserve"><value>このイメージを使用</value></data>
+  <data name="ImageDownloadProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>システムイメージのダウンロード進行状況</value></data>
+  <data name="ImageDownloadResolving" xml:space="preserve"><value>最新の API 37 安定版イメージを検索しています…</value></data>
+  <data name="ImageDownloadVerifying" xml:space="preserve"><value>イメージの整合性を確認しています…</value></data>
+  <data name="ImageDownloadTransferring" xml:space="preserve"><value>ダウンロード中：{0:N0} / {1:N0} MiB</value></data>
+  <data name="ImageDownloadExtracting" xml:space="preserve"><value>展開中：{0:N0} / {1:N0} MiB</value></data>
+  <data name="ImageDownloadReady" xml:space="preserve"><value>ダウンロードが完了しました。「このイメージを使用」で続行します。</value></data>
+  <data name="ImageDownloadCancelled" xml:space="preserve"><value>ダウンロードをキャンセルしました。</value></data>
+  <data name="ImageDownloadFailed" xml:space="preserve"><value>イメージのダウンロードに失敗しました：{0}</value></data>
+  <data name="ImageDownloadConsentTitle" xml:space="preserve"><value>Android SDK ライセンス</value></data>
+  <data name="ImageDownloadConsentDescription" xml:space="preserve"><value>SDK ライセンスを確認し、同意してからダウンロードしてください。</value></data>
+  <data name="ImageDownloadAccept" xml:space="preserve"><value>同意してダウンロード</value></data>
+  <data name="WelcomeSetupFooter.Text" xml:space="preserve"><value>イメージの準備が完了すると、設定が開きます。</value></data>
+  <data name="WelcomeExistingImageTitle.Text" xml:space="preserve"><value>PC からインポート</value></data>
+  <data name="WelcomePreparingTitle.Text" xml:space="preserve"><value>Android を準備しています</value></data>
+  <data name="WelcomeSetupHeading.Text" xml:space="preserve"><value>Android 環境を準備する</value></data>
+  <data name="WelcomeRecommended.Text" xml:space="preserve"><value>おすすめ</value></data>
+  <data name="ImageDownloadSetupDescription.Text" xml:space="preserve"><value>Android アプリの実行に必要なシステムファイルをダウンロードします。</value></data>
+  <data name="PermissionsUnavailable" xml:space="preserve"><value>権限情報を取得できません。</value></data>
+  <data name="PermissionInternet" xml:space="preserve"><value>インターネットへのアクセス</value></data>
+  <data name="PermissionNetworkState" xml:space="preserve"><value>ネットワーク接続の表示</value></data>
+  <data name="PermissionWifiState" xml:space="preserve"><value>Wi-Fi 接続の表示</value></data>
+  <data name="PermissionChangeWifi" xml:space="preserve"><value>Wi-Fi 接続の変更</value></data>
+  <data name="PermissionCamera" xml:space="preserve"><value>カメラの使用</value></data>
+  <data name="PermissionMicrophone" xml:space="preserve"><value>音声の録音</value></data>
+  <data name="PermissionApproximateLocation" xml:space="preserve"><value>おおよその位置情報へのアクセス</value></data>
+  <data name="PermissionPreciseLocation" xml:space="preserve"><value>正確な位置情報へのアクセス</value></data>
+  <data name="PermissionBackgroundLocation" xml:space="preserve"><value>バックグラウンドでの位置情報へのアクセス</value></data>
+  <data name="PermissionNotifications" xml:space="preserve"><value>通知の送信</value></data>
+  <data name="PermissionReadContacts" xml:space="preserve"><value>連絡先の読み取り</value></data>
+  <data name="PermissionWriteContacts" xml:space="preserve"><value>連絡先の変更</value></data>
+  <data name="PermissionReadCalendar" xml:space="preserve"><value>カレンダーの読み取り</value></data>
+  <data name="PermissionWriteCalendar" xml:space="preserve"><value>カレンダーの変更</value></data>
+  <data name="PermissionReadStorage" xml:space="preserve"><value>共有ストレージの読み取り</value></data>
+  <data name="PermissionWriteStorage" xml:space="preserve"><value>共有ストレージの変更</value></data>
+  <data name="PermissionAllFiles" xml:space="preserve"><value>すべてのファイルへのアクセス</value></data>
+  <data name="PermissionImages" xml:space="preserve"><value>写真と画像の読み取り</value></data>
+  <data name="PermissionVideo" xml:space="preserve"><value>動画の読み取り</value></data>
+  <data name="PermissionAudio" xml:space="preserve"><value>音楽と音声の読み取り</value></data>
+  <data name="PermissionBluetooth" xml:space="preserve"><value>Bluetooth デバイスへの接続</value></data>
+  <data name="PermissionBluetoothScan" xml:space="preserve"><value>付近の Bluetooth デバイスの検索</value></data>
+  <data name="PermissionBluetoothSettings" xml:space="preserve"><value>Bluetooth 設定の管理</value></data>
+  <data name="PermissionPhoneState" xml:space="preserve"><value>電話の状態の読み取り</value></data>
+  <data name="PermissionCallPhone" xml:space="preserve"><value>電話の発信</value></data>
+  <data name="PermissionReadSms" xml:space="preserve"><value>SMS の読み取り</value></data>
+  <data name="PermissionSendSms" xml:space="preserve"><value>SMS の送信</value></data>
+  <data name="PermissionInstallPackages" xml:space="preserve"><value>アプリのインストールの要求</value></data>
+  <data name="PermissionDeletePackages" xml:space="preserve"><value>アプリのアンインストールの要求</value></data>
+  <data name="PermissionWakeLock" xml:space="preserve"><value>デバイスのスリープの防止</value></data>
+  <data name="PermissionBoot" xml:space="preserve"><value>起動後の実行</value></data>
+  <data name="PermissionForegroundService" xml:space="preserve"><value>フォアグラウンドサービスの実行</value></data>
+  <data name="PermissionVibrate" xml:space="preserve"><value>バイブレーションの制御</value></data>
+  <data name="PermissionBluetoothLegacy" xml:space="preserve"><value>Bluetooth の使用</value></data>
+  <data name="CannotInstallHeading" xml:space="preserve"><value>このアプリはインストールできません</value></data>
+  <data name="InstallFailureTitle" xml:space="preserve"><value>インストールに失敗しました</value></data>
+  <data name="InstallFailureReason" xml:space="preserve"><value>アプリをインストールできませんでした。</value></data>
+  <data name="InstallFailureSuggestion" xml:space="preserve"><value>エラーの詳細、APK、システムイメージを確認して、もう一度お試しください。</value></data>
+  <data name="InstallFailureNativeAbiTitle" xml:space="preserve"><value>アプリのアーキテクチャが非対応です</value></data>
+  <data name="InstallFailureNativeAbiReason" xml:space="preserve"><value>この APK のネイティブライブラリは {0} 用ですが、選択したシステムイメージは {1} を使用しています。アーキテクチャに互換性がありません。</value></data>
+  <data name="InstallFailureNativeAbiSuggestion" xml:space="preserve"><value>{1} 用のネイティブライブラリを含む 64 ビット APK を選んでください。現在のイメージでは、他の ABI や 32 ビットのライブラリは実行できません。</value></data>
+  <data name="InstallFailureAndroidApiTitle" xml:space="preserve"><value>Android のバージョンが古すぎます</value></data>
+  <data name="InstallFailureAndroidApiReason" xml:space="preserve"><value>この APK には Android API {0} 以降が必要ですが、選択したシステムイメージは API {1} です。</value></data>
+  <data name="InstallFailureAndroidApiSuggestion" xml:space="preserve"><value>Android API {0} 以降のシステムイメージを使うか、現在のイメージに対応した古いバージョンのアプリを選んでください。</value></data>
+  <data name="InstallFailureImageAbiTitle" xml:space="preserve"><value>システムイメージのアーキテクチャが非対応です</value></data>
+  <data name="InstallFailureImageAbiReason" xml:space="preserve"><value>選択したシステムイメージには、Stone が対応する 64 ビットアプリ用 ABI がありません。</value></data>
+  <data name="InstallFailureImageAbiSuggestion" xml:space="preserve"><value>完全な x86_64 または arm64-v8a の Android システムイメージを選んでください。32 ビットのネイティブコード実行には対応していません。</value></data>
+  <data name="InstallFailureSharedUidTitle" xml:space="preserve"><value>共有アプリ ID は非対応です</value></data>
+  <data name="InstallFailureSharedUidReason" xml:space="preserve"><value>この APK は他のアプリとの Android UID の共有を要求しています。Stone は共有 UID を使うアプリのインストールに対応していません。</value></data>
+  <data name="InstallFailureSharedUidSuggestion" xml:space="preserve"><value>UID の共有を必要としないバージョンのアプリを選んでください。</value></data>
+  <data name="InstallFailureSplitApkTitle" xml:space="preserve"><value>分割 APK のインストールは非対応です</value></data>
+  <data name="InstallFailureSplitApkReason" xml:space="preserve"><value>このアプリは分割 APK を使用しています。Stone は現在、単体 APK のインストールにのみ対応しています。</value></data>
+  <data name="InstallFailureSplitApkSuggestion" xml:space="preserve"><value>個別の分割 APK ではなく、完全な単体 APK またはユニバーサル APK を入手してください。</value></data>
+  <data name="ErrorDetails" xml:space="preserve"><value>エラーの詳細</value></data>
+  <data name="OpenApp" xml:space="preserve"><value>アプリを開く</value></data>
+  <data name="OpenAppFailed" xml:space="preserve"><value>アプリを開けません</value></data>
+  <data name="InvalidAppPackage" xml:space="preserve"><value>アプリのパッケージ名が無効です。</value></data>
+</root>

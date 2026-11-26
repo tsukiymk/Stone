@@ -1,0 +1,94 @@
+name: Bug Report
+description: Report a Stone runtime, build, or application compatibility problem.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the [contribution guidelines](https://github.com/Trebledot/Stone/blob/main/CONTRIBUTING.md) and search existing issues first; add evidence to the existing discussion if the same problem has already been reported.
+        Keep each report focused on one issue where possible. Note any information that does not apply or cannot be confirmed, and remove personal information, credentials, and private application data before sharing logs or screenshots.
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing Issues
+      options:
+        - label: I have searched existing issues and found no matching report to which I could add this information.
+          required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Problem Description and Actual Results
+      description: Describe the triggering conditions, actual results, and frequency. If it worked previously, provide the last working version or commit.
+      placeholder: What action triggers the problem? Does it happen every time or only occasionally?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: Explain the result you expected; for application compatibility problems, you can also describe how the application normally behaves on Android.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide minimal reproduction steps, the full launch command, or settings actions. For build problems, provide configuration and build commands.
+      placeholder: |
+        1. Prepare...
+        2. Run the command or perform the action...
+        3. Observe...
+    validations:
+      required: true
+  - type: input
+    id: stone-version
+    attributes:
+      label: Stone Version and Source
+      description: Provide the version or commit and download source; if you built it yourself, include the target architecture and Debug/Release configuration.
+      placeholder: Commit SHA, built from source, x64 Debug
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows Version
+      description: Use winver to find the Windows version and OS build.
+      placeholder: Windows version, OS build
+    validations:
+      required: true
+  - type: dropdown
+    id: host-architecture
+    attributes:
+      label: Windows Host Architecture
+      description: Enter the actual architecture of the host system; specify the image ABI separately below.
+      options:
+        - x64
+        - ARM64
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: apk-and-image
+    attributes:
+      label: APK and System Image Information
+      description: Complete this for application execution or image problems; leave it blank for other issues. Prefer lawful public sources for samples, and note any unknown information.
+      placeholder: |
+        APK: source, package name, version name/code, ABI, SHA-256 (if available)
+        Image: source, version/API, ABI, SHA-256 (if available)
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Follow the diagnostics documentation linked from the contribution guidelines. Paste the full context around the error; for build problems, include the first actual error.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add screenshots or recordings, minimal reproduction fixtures, or related issues. For build problems, include VS/CMake, JDK, Android SDK, and .NET versions.
+    validations:
+      required: false

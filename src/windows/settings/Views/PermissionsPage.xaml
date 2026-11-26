@@ -1,0 +1,124 @@
+<Page
+    x:Class="StoneSettings.Views.PermissionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:StoneSettings.Models"
+    xmlns:controls="using:StoneSettings.Controls">
+    <ScrollViewer
+        x:Name="PermissionsPanel"
+        x:FieldModifier="internal"
+        VerticalScrollBarVisibility="Auto"
+        HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16">
+            <ComboBox
+                x:Uid="MainWindowPermissionAppSelector"
+                x:Name="PermissionAppSelector"
+                AutomationProperties.AutomationId="PermissionAppSelector"
+                x:FieldModifier="internal"
+                ItemsSource="{x:Bind ViewModel.Items}"
+                SelectionChanged="PermissionAppChanged"
+                IsEnabled="{x:Bind ViewModel.IsIdle, Mode=OneWay}"
+                HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:InstalledApp">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <controls:ApplicationIcon Width="24" Height="24" IconPng="{x:Bind IconPng}" />
+                            <TextBlock Text="{x:Bind Name}" AutomationProperties.AutomationId="{x:Bind PackageName}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock
+                x:Name="PermissionPackage"
+                x:FieldModifier="internal"
+                Style="{StaticResource SecondaryTextStyle}"
+                IsTextSelectionEnabled="True"
+                Text="{x:Bind ViewModel.PackageName, Mode=OneWay}" />
+            <TextBlock
+                x:Uid="MainWindowPermissionEmpty"
+                x:Name="PermissionEmpty"
+                x:FieldModifier="internal"
+                Style="{StaticResource SecondaryTextStyle}"
+                Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}" />
+            <ContentControl
+                x:Name="PermissionCards"
+                x:FieldModifier="internal"
+                HorizontalContentAlignment="Stretch"
+                Visibility="{x:Bind ViewModel.CardsVisibility, Mode=OneWay}"
+                IsEnabled="{x:Bind ViewModel.CardsEnabled, Mode=OneWay}">
+                <StackPanel Spacing="16">
+                    <Border Style="{StaticResource SettingCardStyle}" Padding="20">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock x:Uid="MainWindowNotificationsNavigationTextBlock" FontWeight="SemiBold" />
+                                <TextBlock
+                                    x:Uid="MainWindowPermissionNotificationDescription"
+                                    x:Name="PermissionNotificationDescription"
+                                    x:FieldModifier="internal"
+                                    Style="{StaticResource SecondaryTextStyle}"
+                                    TextWrapping="Wrap"
+                                    Text="{x:Bind ViewModel.NotificationDescription, Mode=OneWay}" />
+                            </StackPanel>
+                            <ToggleSwitch
+                                x:Uid="MainWindowPermissionNotifications"
+                                x:Name="PermissionNotifications"
+                                AutomationProperties.AutomationId="PermissionNotifications"
+                                x:FieldModifier="internal"
+                                Grid.Column="1"
+                                Toggled="PermissionNotificationsToggled"
+                                VerticalAlignment="Center"
+                                IsOn="{x:Bind ViewModel.NotificationAllowed, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.NotificationEnabled, Mode=OneWay}" />
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource SettingCardStyle}" Padding="20">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock x:Uid="MainWindowAllFilesAccessTextBlock" FontWeight="SemiBold" />
+                                <TextBlock
+                                    x:Uid="MainWindowPermissionStorageDescription"
+                                    x:Name="PermissionStorageDescription"
+                                    x:FieldModifier="internal"
+                                    Style="{StaticResource SecondaryTextStyle}"
+                                    TextWrapping="Wrap"
+                                    Text="{x:Bind ViewModel.StorageDescription, Mode=OneWay}" />
+                            </StackPanel>
+                            <ToggleSwitch
+                                x:Uid="MainWindowPermissionAllFiles"
+                                x:Name="PermissionAllFiles"
+                                AutomationProperties.AutomationId="PermissionAllFiles"
+                                x:FieldModifier="internal"
+                                Grid.Column="1"
+                                Toggled="PermissionAllFilesToggled"
+                                VerticalAlignment="Center"
+                                IsOn="{x:Bind ViewModel.StorageAllowed, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.StorageEnabled, Mode=OneWay}" />
+                        </Grid>
+                    </Border>
+                    <TextBlock
+                        x:Uid="MainWindowPrivateStorageDescriptionTextBlock"
+                        Style="{StaticResource SecondaryTextStyle}"
+                        TextWrapping="Wrap" />
+                    <Expander x:Uid="MainWindowDeclaredPermissionsExpander" HorizontalAlignment="Stretch">
+                        <TextBlock
+                            x:Name="DeclaredPermissions"
+                            x:FieldModifier="internal"
+                            IsTextSelectionEnabled="True"
+                            TextWrapping="Wrap"
+                            Text="{x:Bind ViewModel.DeclaredPermissions, Mode=OneWay}" />
+                    </Expander>
+                </StackPanel>
+            </ContentControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

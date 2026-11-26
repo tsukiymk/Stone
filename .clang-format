@@ -1,0 +1,42 @@
+# Layout follows C++ Core Guidelines NL.17, NL.18 and NL.20:
+# https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-naming
+# Use clang-format 22.x (validated with 22.1.3).
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+BreakBeforeBraces: Stroustrup
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120
+AccessModifierOffset: -4
+NamespaceIndentation: None
+IndentCaseLabels: false
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+# Separate class/struct/enum/function definitions, including inline methods.
+SeparateDefinitionBlocks: Always
+MaxEmptyLinesToKeep: 1
+# Windows/Android headers can depend on include order; keep it unchanged.
+SortIncludes: Never
+IncludeBlocks: Preserve
+# Keep this pass limited to layout, preserving comments and source tokens.
+ReflowComments: Never
+FixNamespaceComments: false
+BreakStringLiterals: false
+QualifierAlignment: Leave
+SortUsingDeclarations: Never
+# These macros expand to complete if/return statements without semicolons.
+StatementMacros:
+  - UNARY
+  - BINARY
+LineEnding: DeriveLF

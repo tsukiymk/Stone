@@ -1,0 +1,53 @@
+name: Feature Request
+description: Suggest a new Stone feature or an improvement to existing behavior.
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the [contribution guidelines](https://github.com/Trebledot/Stone/blob/main/CONTRIBUTING.md) and relevant [feature documentation](https://github.com/Trebledot/Stone/blob/main/docs/README.md), and search existing issues first.
+        Describe the problem in terms of a concrete use case. For substantial features or architectural changes, discuss the scope and approach before implementing them.
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing Requests
+      options:
+        - label: I have searched existing issues and found no matching request to which I could add this information.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Use Case and Problem
+      description: Who encounters the difficulty, and under what circumstances? What is missing from the current functionality? Keep each request focused on one need where possible.
+      placeholder: When I try to..., I encounter..., which causes...
+    validations:
+      required: true
+  - type: textarea
+    id: desired-behavior
+    attributes:
+      label: Desired Behavior
+      description: Describe how users should use the feature, the final outcome, and how to determine that the need has been met.
+      placeholder: I would like to be able to...; once complete, I should observe...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What approaches have you tried or considered, and why did they not meet your needs? You can also note that you have not tried any yet.
+    validations:
+      required: false
+  - type: textarea
+    id: scope-and-evidence
+    attributes:
+      label: Scope and Supporting Evidence
+      description: Include host architecture, Android API/ABI, application sample identities, official documentation, screenshots or measurements, and related issues as appropriate.
+    validations:
+      required: false
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Suggestions and Willingness to Contribute
+      description: If you have an approach in mind, describe the components involved, failure and recovery paths, compatibility impact, and validation ideas. You can also indicate your willingness to help implement or test it; implementation knowledge is not required to submit a request.
+    validations:
+      required: false

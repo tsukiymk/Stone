@@ -1,0 +1,103 @@
+<Page
+    x:Class="StoneSettings.Views.ShellPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:StoneSettings.Controls">
+    <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <controls:TitleBar
+            x:Uid="MainWindowWindowTitleBar"
+            x:Name="WindowTitleBar"
+            PaneToggleRequested="TogglePane">
+            <controls:TitleBar.CenterContent>
+                <AutoSuggestBox
+                    x:Uid="MainWindowSearchBox"
+                    x:Name="SearchBox"
+                    AutomationProperties.AutomationId="SettingsSearch"
+                    QueryIcon="Find"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    TextChanged="SearchChanged"
+                    QuerySubmitted="SearchSubmitted"
+                    SuggestionChosen="SearchChosen" />
+            </controls:TitleBar.CenterContent>
+        </controls:TitleBar>
+        <NavigationView
+            x:Name="Navigation"
+            Grid.Row="1"
+            OpenPaneLength="264"
+            CompactModeThresholdWidth="640"
+            ExpandedModeThresholdWidth="1000"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleButtonVisible="False"
+            IsSettingsVisible="False"
+            IsTitleBarAutoPaddingEnabled="False"
+            SelectionChanged="NavigationChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem
+                    x:Uid="MainWindowSystemNavigation"
+                    x:Name="SystemNavigation"
+                    AutomationProperties.AutomationId="SystemNavigation"
+                    Tag="system">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE770;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Uid="MainWindowAppsNavigation"
+                    x:Name="AppsNavigation"
+                    AutomationProperties.AutomationId="AppsNavigation"
+                    Tag="apps">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE71D;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Uid="MainWindowNotificationsNavigation"
+                    x:Name="NotificationsNavigation"
+                    AutomationProperties.AutomationId="NotificationsNavigation"
+                    Tag="notifications">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEA8F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
+                    x:Uid="MainWindowPermissionsNavigation"
+                    x:Name="PermissionsNavigation"
+                    AutomationProperties.AutomationId="PermissionsNavigation"
+                    Tag="permissions">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE72E;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <Grid Margin="28,18,28,24" RowSpacing="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        x:Uid="MainWindowPageTitle"
+                        x:Name="PageTitle"
+                        AutomationProperties.AutomationId="SettingsPageTitle"
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock
+                        x:Uid="MainWindowPageDescription"
+                        x:Name="PageDescription"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <Frame x:Name="PageFrame" Grid.Row="1" />
+            </Grid>
+        </NavigationView>
+    </Grid>
+</Page>

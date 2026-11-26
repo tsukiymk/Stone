@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.trebledot.stone.job.fixture">
+<uses-sdk android:minSdkVersion="23" android:targetSdkVersion="37" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+<application android:label="Stone Job fixture" android:name="com.trebledot.stone.probe.JobFixture$App">
+<activity android:name="com.trebledot.stone.probe.JobFixture" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+<service android:name="com.trebledot.stone.probe.JobFixture$First" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
+<service android:name="com.trebledot.stone.probe.JobFixture$Second" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
+<service android:name="com.trebledot.stone.probe.JobFixture$Invalid" android:exported="false" />
+</application></manifest>

@@ -1,0 +1,4 @@
+# Third-party sources and generated output are maintained separately.
+oss/**
+build/**
+bin/**

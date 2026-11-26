@@ -1,0 +1,660 @@
+{
+  "system": {
+    "libmedia_jni.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "AOSP API 37.0 x86_64 r6.0.0 image CE2A.260420.051.A3, /system/lib64/libmedia_jni.so; host Media Foundation codec bridge",
+        "sha256": "c3ff9b64a4bb0c238291caaef99011dffc572a3caf17d25f04fae530172b422f",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["1080p-avc-synchronous-and-asynchronous-surface-decode", "aac-lc-pcm-frequency-eos-and-flush", "codec-buffer-ownership-and-native-frame-storage", "hevc-main-software-surface-ani-6.4.1-user-playback"]
+        }
+      }
+    ],
+    "libGLESv2.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "AOSP API 37.0 x86_64 r6.0.0 image CE2A.260420.051.A3, /system/lib64/libGLESv2.so; calls bridged to host ANGLE",
+        "sha256": "9fbedeea72b67a58aae15d5fed0b0380052dedc1fc93043f238265c0f8dc532f",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["seven-argument-active-attribute-and-uniform-reflection", "external-oes-texture-shader-pixels-and-transform"]
+        }
+      }
+    ],
+    "libcutils.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "AOSP API 37.0 x86_64 r6.0.0 image CE2A.260420.051.A3, /system/lib64/libcutils.so",
+        "sha256": "888f4abe4f673341a1de18d009e8b1722a35206187ce7135afb509198bc80a2e",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["java-shared-memory-create-size-coherent-mappings-and-write-seal", "memfd-descriptor-link-identity"]
+        }
+      }
+    ],
+    "libjnigraphics.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "7e6fd2e6de3e668b35ec3f0e751725bc00bfaec93ab0abbc0f677013dff8225d",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "art-ndk-bitmap-info",
+            "null-argument",
+            "rgba-lock-write-unlock",
+            "java-pixel-coherence"
+          ]
+        }
+      }
+    ],
+    "libandroid.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "ff73b7b105ad182a46b6eeb6c33a3c8312136454e37b0a94a34e89f05412057d",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "art-ndk-assets-buffer",
+            "read-seek-length-remaining",
+            "directory-rewind",
+            "uncompressed-fd-pread",
+            "configuration-density-and-screen-dp"
+          ]
+        }
+      }
+    ],
+    "libsigchain.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "cbebba6afdd5432e5d6fbe8c1ebc84586155ef4c01c08bb676826f21bdd40592",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "libc-signal-symbol-lookup",
+            "sigaction64-user-handler",
+            "x64-mmap-sigsegv-context",
+            "repeated-callbacks-and-mask-restoration"
+          ]
+        }
+      }
+    ],
+    "libart.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "99ff47d82c58be9f750ab7016dedc0d2f498c8393b8afdd815f50a95ebfe3058",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "nterp-interpreter",
+            "original-dex-execution",
+            "jni-callbacks",
+            "managed-threads",
+            "crc32",
+            "sha256",
+            "exceptions",
+            "implicit-field-null-checks",
+            "implicit-virtual-call-null-checks",
+            "gc",
+            "guest-file-io",
+            "handler",
+            "application-context",
+            "content-providers",
+            "activity-lifecycle",
+            "software-dashboard",
+            "view-attachment",
+            "mouse-click-and-cancel",
+            "live-window-loop-and-redraw",
+            "experimental-x64-java-jit-publication-gs-tls-adaptation",
+            "jit-compiled-jni-callbacks-managed-threads-gc-and-catch-handlers",
+            "jit-compiled-packed-switch-and-trailing-literals",
+            "jit-fdroid-2.0.3-navigation-search-input-and-details",
+            "process-current-thread-priority-query-and-update",
+            "handler-thread-minus2-zero-startup-and-exit",
+            "current-process-signal0-and-sigkill"
+          ]
+        }
+      },
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Android API 37 extension 22 Google Play arm64-v8a revision 7 system image, /apex/com.android.art/lib64/libart.so",
+        "sha256": "77b1097805941f59a599f03b687cf73f62188aa60e23c8fc7be638e41a642cce",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "arm64-translated-original-dex-jni-and-string-regions",
+            "arm64-translated-default-java-jit-three-methods",
+            "arm64-translated-jit-managed-threads-gc-and-exception-recovery",
+            "arm64-translated-implicit-field-and-virtual-null-recovery",
+            "arm64-translated-process-current-thread-priority-query-and-update",
+            "arm64-translated-handler-thread-minus2-zero-startup-and-exit",
+            "arm64-translated-current-process-signal0-and-sigkill"
+          ]
+        }
+      }
+    ],
+    "libjavacore.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Android API 37 Google Play x86_64 system image, /apex/com.android.art/lib64/libjavacore.so",
+        "sha256": "f14f2b5a1a75bf51ec927a4cfcee34e4b5da4d60a97f75542cf4eee18de4edd1",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["os-statvfs-main-thread", "os-statvfs-managed-thread", "os-android-getaddrinfo-loopback-main-thread", "os-android-getaddrinfo-loopback-managed-thread"]
+        }
+      },
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Android API 37 extension 22 Google Play arm64-v8a revision 7 system image, /apex/com.android.art/lib64/libjavacore.so",
+        "sha256": "ed373bc3126b1469d71593bc05e9349a2effcb1fe022179e55e80fa264af5376",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["os-statvfs-main-thread", "os-statvfs-managed-thread", "os-android-getaddrinfo-loopback-main-thread", "os-android-getaddrinfo-loopback-managed-thread"]
+        }
+      }
+    ],
+    "libhwui.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "b14a5fe62f7000c0141c04311b5abf67490c5d7ffd0235b462a4404fd1e6d0cc",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "art-software-bitmap-canvas",
+            "bitmap-region-decoder-stream-and-cropped-pixels",
+            "paint-and-geometry",
+            "font-fallback-latin-cjk-emoji",
+            "activity-dashboard-and-button-redraw",
+            "png",
+            "fdroid-vector-drawable",
+            "animated-single-choice-xml-inflation",
+            "animated-vector-software-draw-and-final-checked-pixels",
+            "solid-ripple"
+          ]
+        }
+      },
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Android API 37 extension 22 Google Play arm64-v8a revision 7 system image, /system/lib64/libhwui.so",
+        "sha256": "376edd61be9b43888373e48f97f87a346329060947b5e7bad7b99d32891aa969",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "arm64-translated-bitmap-canvas-solid-and-transform-pixels",
+            "arm64-translated-software-alpha-rounded-rect-and-gradient-pixels",
+            "arm64-translated-software-latin-text-pixels",
+            "arm64-translated-cit-software-window-redraw"
+          ]
+        }
+      }
+    ],
+    "libandroid_runtime.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "2c0a0e6a8714e8f155e3ac796e2c56463d503388f907ebb53da7cc555d55ce52",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "apk-resources",
+            "application-shared-memory",
+            "java-shared-memory-create-map-and-write-seal",
+            "egl14-default-display-jni",
+            "egl14-software-window-and-eglext-presentation-time",
+            "surface-texture-pixels-callbacks-timestamps-and-release",
+            "audio-product-strategy-media-stream-and-unsupported-offload-query",
+            "software-surface-frame-rate-unsupported-status-invalid-arguments-and-release",
+            "property-cache",
+            "locale-and-night-mode",
+            "rtl-resources",
+            "activity-configuration-recreation",
+            "saved-activity-state",
+            "explicit-activity-recreation-and-retained-state",
+            "activity-lifecycle",
+            "activity-thread-idle-resource-purge",
+            "view-attachment",
+            "motion-event",
+            "property-animation",
+            "java-sqlite-cursor",
+            "package-installer-filebridge-staging",
+            "package-installer-fsync-and-resume",
+            "package-installer-session-recovery",
+            "apk-signature-v1-v2-v3-full-verification",
+            "apk-signing-rotation-and-multiple-signers",
+            "apk-archive-parser-and-permission-splits",
+            "package-signing-query-flags",
+            "installed-package-registry-and-recovery",
+            "package-upgrade-signing-capabilities",
+            "package-registry-atomic-publication",
+            "unlink-open-apk-and-reuse-path",
+            "package-installer-session-commit",
+            "package-installer-confirmation-activity",
+            "package-installer-status-and-receipts",
+            "package-installer-preapproval-and-recovery",
+            "preapproved-package-and-localized-label-validation",
+            "local-broadcast-and-pending-intent",
+            "package-change-broadcasts",
+            "local-service-lifecycle-and-start-ids",
+            "local-service-shared-null-binding-and-rebind",
+            "local-service-foreground-type-and-state",
+            "local-process-identity-and-component-importance",
+            "virtual-keyboard-character-map",
+            "phone-window-menu-shortcut",
+            "activity-result-uninstall-request",
+            "uninstall-confirmation-recreation-and-source-identity",
+            "durable-uninstall-and-owned-code-data-cleanup",
+              "package-removal-broadcasts",
+              "installed-launcher-query-and-component-state",
+              "managed-apk-process-uid-and-data"
+          ]
+        }
+      }
+    ],
+    "libinput.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "3c64aeb99a293892ca4aeeb441042b90127783beb0aba3813f33313a9af15025",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "virtual-kcm-base-file-parser",
+            "key-character-modifiers-and-labels",
+            "key-character-map-parcel-round-trip",
+            "key-character-map-event-synthesis"
+          ]
+        }
+      },
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Android API 37 extension 22 Google Play arm64-v8a revision 7 system image, /system/lib64/libinput.so",
+        "sha256": "90987faf428fa7f3865796ea28fd2af4b41b6b640cfe9c9aada7601c638ef67c",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "arm64-translated-motion-event-pointer-fields-copy-offset-and-cancel",
+            "arm64-translated-motion-event-batched-history",
+            "arm64-translated-velocity-tracker-explicit-lsq2",
+            "arm64-translated-win32-mouse-and-modified-key-dispatch"
+          ]
+        }
+      }
+    ],
+    "libjavacrypto.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "96b2d6d2210273cce518a3f97db66cea08e7429420128afe140127a1680d37d2",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["art-conscrypt-jca-sha256"]
+        }
+      }
+    ],
+    "libsqlite.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "7a51df61610e66504abb8412b9d4bb5427e8c40900ff9f1e7639ce1dca23c78b",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": [
+            "sqlite-query",
+            "art-java-create-insert-reopen-read",
+            "windows-vfs",
+            "rollback-journal-transaction",
+            "wal-read-snapshot-and-concurrent-commit",
+            "wal-competing-writer-exclusion",
+            "wal-writer-checkpoint-exclusion-and-nested-lock-lifetime",
+            "wal-index-allocation-granularity-growth",
+            "wal-cross-process-snapshot-and-lock-ownership",
+            "wal-read-only-connection",
+            "wal-truncate-checkpoint",
+            "wal-crash-recovery-committed-and-uncommitted-frames",
+            "art-java-wal-mode-snapshot-and-reopen-persistence"
+          ]
+        }
+      }
+    ],
+    "libz.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "70bc397d2dad3355d111628ab16be35d423bffb3a02b33de4865e099ea6ab7f3",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["arm64-guest-crc32"]
+        }
+      },
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "7f0b3de0dc45ec33a7b3c5f91e411c78faaafde3383fbe36f217d5f7d4a320f4",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["translated-image-adler32", "adler32-vector-boundaries-and-incremental-input", "translated-image-crc32-nine-byte-vector", "callbacks-across-native-threads", "native-block-adler32-seeds-alignments-and-incremental-input"]
+        }
+      }
+    ],
+    "libm.so": [
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "d55f716c4e4be4d7999c2baacb5b8dda433125580a997670f9f4205d8824400d",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["translated-image-sqrt-81", "translated-image-frexp-sigchain-store-fault-recovery", "floating-state-preserved-across-sigchain"]
+        }
+      }
+    ],
+    "liblz4.so": [
+      {
+        "abi": "arm64-v8a",
+        "version": "37",
+        "versionSource": "android-api",
+        "sha256": "dd9a048fc8e59db1c8e5a90c34f08c9feed6a8ad9408567ffd7e3b64415d8cc7",
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["translated-image-compress-bound-100", "callbacks-across-native-threads"]
+        }
+      }
+    ]
+  },
+  "external": {
+    "libffmpegkitjni.so": [
+      {
+        "packageName": "me.him188.ani",
+        "abi": "x86_64",
+        "version": "6.4.1",
+        "versionSource": "apk-version-name",
+        "source": "User-provided ani-6.4.1-universal.apk, lib/x86_64/libffmpegkitjni.so",
+        "sha256": "c4e0a379b7fc82cf3db185519e2a011de593ab46f7ddbe571f58da4f43138873",
+        "compatibility": {
+          "minVersion": "6.4.1",
+          "maxVersion": "6.4.1",
+          "scope": ["library-load-during-application-startup"]
+        }
+      }
+    ],
+    "libsyscall.so": [
+      {
+        "packageName": "me.zhanghai.android.files",
+        "abi": "x86_64",
+        "version": "1.7.5",
+        "versionSource": "apk-version-name",
+        "sha256": "2bc8b3784293b210c04f65d6fa8aa94a7add11e590516c73777425551756c39f",
+        "compatibility": {
+          "minVersion": "1.7.5",
+          "maxVersion": "1.7.5",
+          "scope": ["current-app-library-load", "primary-emulated-storage-directory-listing", "empty-extended-attribute-list", "inotify-directory-create-rename-delete-and-file-count-ui-refresh"]
+        }
+      }
+    ],
+    "liblibretrodroid.so": [
+      {
+        "packageName": "com.swordfish.lemuroid",
+        "abi": "x86_64",
+        "version": "1.17.0",
+        "versionSource": "apk-version-name",
+        "sha256": "4e768c360dc8e4089c48ef2a8999fd742fb812c591958a395c9ba072c9a2b849",
+          "compatibility": {
+            "minVersion": "1.17.0",
+            "maxVersion": "1.17.0",
+            "scope": ["current-app-private-core-loading", "chessmaster-gba-angle-rendering-and-touch-input", "shared-audio-user-listening", "screen-swap-interval-pacing", "quick-save-and-software-pixelcopy-preview"]
+          }
+      }
+    ],
+    "libmgba_libretro_android.so": [
+      {
+        "packageName": "com.swordfish.lemuroid",
+        "abi": "x86_64",
+        "version": "1.17.0",
+        "versionSource": "library-release",
+        "sha256": "3ed96eb2299ac97e9400c2ddbd111c4877d2c5f4f1e2b9a22fba1845f1f16007",
+          "compatibility": {
+            "minVersion": "1.17.0",
+            "maxVersion": "1.17.0",
+            "scope": ["chessmaster-gba-rom-execution", "chessmaster-touch-input-and-cpu-response", "chessmaster-audio-user-listening", "chessmaster-quick-save-and-reopen"]
+          }
+      }
+    ],
+    "libclang_rt.ubsan_standalone-x86_64-android.so": [
+      {
+        "packageName": "android",
+        "abi": "x86_64",
+        "version": "f52a119338b344d371e59c0bf08717555ec6fd82",
+        "versionSource": "elf-build-id",
+        "sha256": "fd9a146067058530f36c0f9d7b98acbc97d3643f82753dd8988dbd2471e2c34c",
+        "compatibility": {
+          "minVersion": "f52a119338b344d371e59c0bf08717555ec6fd82",
+          "maxVersion": "f52a119338b344d371e59c0bf08717555ec6fd82",
+          "scope": ["syscall-layout"]
+        }
+      }
+    ],
+    "libwebviewchromium.so": [
+      {
+        "packageName": "com.google.android.webview",
+        "abi": "x86_64",
+        "version": "145.0.7632.218",
+        "versionSource": "apk-version-name",
+        "sha256": "c86d6e75a39650a4e1d8372113a66d75d20aa031189d4b6513ea985e2da0c6d0",
+        "compatibility": {
+          "minVersion": "145.0.7632.218",
+          "maxVersion": "145.0.7632.218",
+          "scope": ["webview-cit"]
+        }
+      }
+    ],
+    "libunity.so": [
+      {
+        "packageName": "com.miHoYo.Nap",
+        "abi": "arm64-v8a",
+        "version": "3.3.0",
+        "versionSource": "apk-version-name",
+        "sha256": "7a684dd8c517035b91599b9bda54174485d6454792465b8ced9356197f5d77c0",
+        "compatibility": {
+          "minVersion": "3.3.0",
+          "maxVersion": "3.3.0",
+          "scope": ["library-load"]
+        }
+      },
+      {
+        "packageName": "com.treemengames.pako2",
+        "abi": "x86_64",
+        "version": "1.0.2",
+        "versionSource": "apk-version-name",
+        "sha256": "ae762ed292aa343f2bbdea0907675dea1345081978ad0102ac8de9df0e3ec8c3",
+        "compatibility": {
+          "minVersion": "1.0.2",
+          "maxVersion": "1.0.2",
+          "scope": ["library-load"]
+        }
+      }
+    ],
+    "libil2cpp.so": [
+      {
+        "packageName": "com.miHoYo.Nap",
+        "abi": "arm64-v8a",
+        "version": "3.3.0",
+        "versionSource": "apk-version-name",
+        "sha256": "fcccb931de46ffb45d8ddea8dde92e5af95e54825aafe599de3548cb3b3f69bf",
+        "compatibility": {
+          "minVersion": "3.3.0",
+          "maxVersion": "3.3.0",
+          "scope": ["library-load", "metadata"]
+        }
+      },
+      {
+        "packageName": "com.treemengames.pako2",
+        "abi": "x86_64",
+        "version": "1.0.2",
+        "versionSource": "apk-version-name",
+        "sha256": "2f2b30abf9e1a66e7d6c8afd0028b80e70e448f5b8c1d33a9df5f37722229612",
+        "compatibility": {
+          "minVersion": "1.0.2",
+          "maxVersion": "1.0.2",
+          "scope": ["library-load"]
+        }
+      }
+    ],
+    "libAkSoundEngine.so": [
+      {
+        "packageName": "com.miHoYo.Nap",
+        "abi": "arm64-v8a",
+        "version": "3.3.0",
+        "versionSource": "apk-version-name",
+        "sha256": "9398698d35f584de14677d6b885d08b2dbab3bf1622a408ecc9487ddce514027",
+        "compatibility": {
+          "minVersion": "3.3.0",
+          "maxVersion": "3.3.0",
+          "scope": ["library-load", "opensl-engine-init"]
+        }
+      }
+    ],
+    "libcri_ware_unity.so": [
+      {
+        "packageName": "com.miHoYo.Nap",
+        "abi": "arm64-v8a",
+        "version": "3.3.0",
+        "versionSource": "apk-version-name",
+        "sha256": "41d1f81e3bcf560f43477226fa34c1c6610cfac1ad729c96446dd28f0377b821",
+        "compatibility": {
+          "minVersion": "3.3.0",
+          "maxVersion": "3.3.0",
+          "scope": ["library-load"]
+        }
+      }
+    ],
+    "libcri_mana_vpx.so": [
+      {
+        "packageName": "com.miHoYo.Nap",
+        "abi": "arm64-v8a",
+        "version": "3.3.0",
+        "versionSource": "apk-version-name",
+        "sha256": "6262bd9cf5526a19447e52f1bf0ac7f4da93c1fca8f58858091d7afe190acd87",
+        "compatibility": {
+          "minVersion": "3.3.0",
+          "maxVersion": "3.3.0",
+          "scope": ["library-load", "vp9-reference-clip-decode"]
+        }
+      }
+    ],
+    "libmain.so": [
+      {
+        "packageName": "com.miHoYo.Nap",
+        "abi": "arm64-v8a",
+        "version": "3.3.0",
+        "versionSource": "apk-version-name",
+        "sha256": "a6b423666b80204488fa47ad9695c9cd9ddd3f54ace355c5ed88eeee5dc7e8bf",
+        "compatibility": null
+      },
+      {
+        "packageName": "com.treemengames.pako2",
+        "abi": "x86_64",
+        "version": "1.0.2",
+        "versionSource": "apk-version-name",
+        "sha256": "c77d1b1dd67063cd2590f9c0dcf7b8e1264af150558d3a9158dfaef7b9340159",
+        "compatibility": {
+          "minVersion": "1.0.2",
+          "maxVersion": "1.0.2",
+          "scope": ["library-load"]
+        }
+      }
+    ],
+    "libmatrix-jnihook.so": [
+      {
+        "packageName": "com.tencent.mm",
+        "abi": "arm64-v8a",
+        "version": "8.0.80",
+        "versionSource": "apk-version-name",
+        "sha256": "2e2ce29d6b65e23014f68d203c2be27710cb78552cce94d031a996ac1992c958",
+        "compatibility": null
+      }
+    ],
+    "libcso.so": [
+      {
+        "packageName": "com.tencent.mm",
+        "abi": "arm64-v8a",
+        "version": "8.0.80",
+        "versionSource": "apk-version-name",
+        "sha256": "57ac6587fbcdbbfc468af3b767476bda7c8408178281a0c6507c85e3962341c1",
+        "compatibility": null
+      }
+    ],
+    "libmmkv.so": [
+      {
+        "packageName": "com.tencent.mm",
+        "abi": "arm64-v8a",
+        "version": "8.0.80",
+        "versionSource": "apk-version-name",
+        "sha256": "466e7c16600df4cb94024a5cf264db485dabbf4473d8103dbe2af3a267d78617",
+        "compatibility": null
+      }
+    ],
+    "libflutter.so": [
+      {
+        "packageName": "com.carriez.flutter_hbb",
+        "abi": "x86_64",
+        "version": "1.5.3",
+        "versionSource": "apk-version-name",
+        "sha256": "c64e72997fff2fff02705cba95b27c8bd7d792bc96333038c2e99b4125dc8b77",
+        "compatibility": null
+      }
+    ]
+  }
+}

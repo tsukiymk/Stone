@@ -1,0 +1,58 @@
+<Project>
+  <!-- ZERO_CHECK is a native build dependency, never a managed assembly. Its
+       C++ Windows SDK may be newer than this application's .NET targeting pack. -->
+  <Target Name="ExcludeCMakeRegenerationFromManagedPlatformCheck"
+          BeforeTargets="FindInvalidProjectReferences"
+          DependsOnTargets="GetReferenceTargetPlatformMonikers">
+    <ItemGroup>
+      <_ProjectReferenceTargetPlatformMonikers
+          Remove="@(_ProjectReferenceTargetPlatformMonikers)"
+          Condition="'%(_ProjectReferenceTargetPlatformMonikers.Filename)' == 'ZERO_CHECK'" />
+    </ItemGroup>
+  </Target>
+  <Target Name="CopySettingsDependencyNotices" AfterTargets="Build;Publish">
+    <ItemGroup>
+      <_SettingsRuntimePack Include="@(ResolvedFrameworkReference)"
+          Condition="'%(ResolvedFrameworkReference.RuntimePackName)' == 'Microsoft.NETCore.App.Runtime.$(RuntimeIdentifier)' Or '%(ResolvedFrameworkReference.RuntimePackName)' == 'Microsoft.NETCore.App.Runtime.NativeAOT.$(RuntimeIdentifier)'" />
+      <_SettingsNotice Include="$(NuGetPackageRoot)microsoft.windowsappsdk/$(StoneSettingsWindowsAppSdkVersion)/license.txt">
+        <TargetName>WindowsAppSDK-license.txt</TargetName>
+      </_SettingsNotice>
+      <_SettingsNotice Include="%(_SettingsRuntimePack.RuntimePackPath)/LICENSE.TXT">
+        <TargetName>DotNET-MIT.txt</TargetName>
+      </_SettingsNotice>
+      <_SettingsNotice Include="%(_SettingsRuntimePack.RuntimePackPath)/THIRD-PARTY-NOTICES.TXT">
+        <TargetName>DotNET-third-party-notices.txt</TargetName>
+      </_SettingsNotice>
+    </ItemGroup>
+    <Copy SourceFiles="@(_SettingsNotice)"
+          DestinationFiles="@(_SettingsNotice->'$(OutputPath)licenses/%(TargetName)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(StoneThirdPartyNoticesPath)"
+          DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishSettingsDependencyNotices" AfterTargets="Publish"
+          DependsOnTargets="CopySettingsDependencyNotices">
+    <ItemGroup>
+      <_PublishedSettingsNotice Include="$(OutputPath)licenses/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PublishedSettingsNotice)" DestinationFolder="$(PublishDir)licenses"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(StoneThirdPartyNoticesPath)" DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishSettingsXamlResources" AfterTargets="Publish">
+    <!-- WinUI copies generated PRI/XBF files to Build output without adding
+         them to the .NET Native AOT publication's file list. -->
+    <Error Condition="!Exists('$(OutputPath)$(AssemblyName).pri')"
+           Text="The current StoneSettings resource index is missing from Build output." />
+    <ItemGroup>
+      <_PublishedSettingsXaml Include="$(OutputPath)**/*.xbf"
+                              Exclude="$(PublishDir)**/*;$(OutputPath)obj/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri" DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_PublishedSettingsXaml)"
+          DestinationFiles="@(_PublishedSettingsXaml->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

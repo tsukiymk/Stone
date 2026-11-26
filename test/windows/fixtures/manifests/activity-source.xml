@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.trebledot.stone.route.source"><uses-sdk android:minSdkVersion="23" android:targetSdkVersion="37" /><application android:label="Stone Activity source"><activity android:name="com.trebledot.stone.probe.ActivityRouteFixture$Source" android:exported="false" />
+<activity android:name="com.trebledot.stone.probe.ActivityRouteFixture$PrivateGame" android:process=":game" android:exported="false" />
+<service android:name="com.trebledot.stone.probe.ActivityRouteFixture$PrivateService" android:process=":game" android:exported="false" />
+<activity-alias android:name="com.trebledot.stone.route.source.CallerAlias" android:targetActivity="com.trebledot.stone.probe.ActivityRouteFixture$Source" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias></application></manifest>

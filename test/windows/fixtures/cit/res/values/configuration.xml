@@ -1,0 +1,4 @@
+<resources>
+    <string name="configuration_probe_locale">default</string>
+    <string name="configuration_probe_night">light</string>
+</resources>

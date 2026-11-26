@@ -1,0 +1,91 @@
+Stone third-party components
+============================
+
+This file identifies the third-party code retained in this source tree.
+The referenced license files and source notices remain authoritative.
+All source-tree paths below are relative to the repository root.
+
+Zydis 4.1.1 and Zycore
+  Purpose: x86 instruction decoding/encoding for the Windows x64 ART bridge.
+  License: MIT.
+  Notices: oss/zydis/LICENSE, oss/zydis/dependencies/zycore/LICENSE.
+  Revisions and upstream: docs/third-party/zydis.md.
+
+XZ Embedded
+  Purpose: decode ELF .gnu_debugdata.
+  License: BSD Zero Clause (0BSD).
+  Notice: oss/xz-embedded/COPYING.
+  Revision and upstream: docs/third-party/xz-embedded.md.
+
+AOSP Bionic error description data
+  Purpose: Android errno names and descriptions in the Windows libc bridge.
+  License: BSD 2-Clause.
+  Notice: oss/bionic/LICENSE and oss/bionic/errno-descriptions.inc.
+  Source identities and adaptation: docs/third-party/bionic.md.
+
+erofs-utils compact index lookup
+  Purpose: C++ adaptation in src/windows/image-tools/Erofs.cpp.
+  License: Apache License 2.0.
+  Notices and source revision: oss/erofs-utils/LICENSE, oss/erofs-utils/NOTICE.
+  Both notices are distributed in licenses/erofs-utils/ beside StoneImageTool.exe.
+
+miniz 3.1.2
+  Purpose: native ZIP/APEX extraction and CRC verification in StoneImageTool.
+  License: MIT.
+  Source, hashes and build configuration: oss/miniz/README.stone.md.
+  Notice: oss/miniz/LICENSE, distributed as licenses/miniz-MIT.txt.
+
+ANGLE / Khronos headers
+  Purpose: Windows graphics API declarations.
+  Notices: oss/angle/LICENSE and individual header notices in oss/angle/include.
+  ANGLE DLLs are external runtime dependencies and are not bundled here.
+
+Vulkan headers
+  Purpose: Vulkan bridge API declarations.
+  License: Apache License 2.0 and the notices in individual headers.
+  Notice: oss/vulkan/LICENSE.txt.
+
+SQLite headers
+  Purpose: SQLite bridge API declarations.
+  SQLite is in the public domain; see the notices in oss/sqlite/sqlite3.h.
+  The actual Android SQLite library comes from the selected system image.
+
+Windows settings dependencies
+  Purpose: WinUI 3 desktop settings UI and Native AOT / trimmed publication.
+  Microsoft.WindowsAppSDK: version pinned by STONE_SETTINGS_WINDOWS_APP_SDK_VERSION
+  in src/windows/settings/CMakeLists.txt; Microsoft Software License Terms in
+  the restored NuGet package's license.txt. Upstream: microsoft/WindowsAppSDK.
+  Microsoft.Windows.SDK.BuildTools: build-only Windows SDK tools; version pinned
+  by STONE_SETTINGS_WINDOWS_SDK_BUILDTOOLS_VERSION. Terms: https://aka.ms/WinSDKLicenseURL.
+  .NET runtime / Native AOT: supplied by the selected .NET SDK and runtime packs.
+  License: MIT, with additional third-party notices from the runtime package.
+  Upstream: https://github.com/dotnet/runtime.
+  Settings builds copy the Windows App SDK license and resolved .NET runtime
+  license/notices into the output licenses directory. Preserve the licenses
+  and notices of any additional restored packages when redistributing them.
+
+Windows packaging tools and redistributables
+  WiX Toolset 4.0.6: https://github.com/wixtoolset/wix (MS-RL).
+  Build-only external tool, installed separately; not embedded in Stone packages.
+  MakeAppx, MakePri and SignTool: external Windows SDK build tools under the
+  Windows SDK license; not embedded in Stone packages.
+  Native MSVC runtime DLLs: copied from the selected Visual Studio toolchain's
+  redistributable directory using CMake InstallRequiredSystemLibraries.
+  Redistribution is subject to the installed Visual Studio license and REDIST
+  terms: https://visualstudio.microsoft.com/license-terms/.
+  Windows JDKs, Android images and ANGLE DLLs are not added by packaging.
+
+System-image components
+  ART, the AOSP Java framework, system fonts, Conscrypt, Android native
+  libraries and their dependencies are read from the user-selected Android
+  system image. They are not redistributed in this repository. Preserve
+  the image supplier's licenses and notices when distributing an image.
+
+README hero artwork: Microsoft Fluent UI System Icons (Color)
+  Source: https://github.com/microsoft/fluentui-system-icons
+  Revision: a3de63245b4fa49c30e20d9838593a105affe774
+  Copyright (c) 2020 Microsoft Corporation. License: MIT.
+  Original SVG assets and license terms are available from the upstream source
+  at the revision above. The hero composition scales and positions
+  these original icons without redrawing their shapes or changing their colors.
+  These files are documentation artwork only and add no runtime dependency.

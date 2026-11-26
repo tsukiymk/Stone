@@ -1,0 +1,174 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  NUGET_PACKAGES: ${{ github.workspace }}/build/cache/nuget/
+  STONE_ANDROID_PLATFORM: 'android-37.0'
+  STONE_ANDROID_BUILD_TOOLS: '36.0.0'
+
+jobs:
+  build:
+    name: Test and build Windows x64 / ARM64
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 180
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up .NET SDK 10
+        id: dotnet
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: windows-2025-vs2026-${{ runner.arch }}-nuget-v1-${{ steps.dotnet.outputs.dotnet-version }}-${{ hashFiles('src/windows/settings/CMakeLists.txt', 'src/windows/settings/Settings.targets', 'test/windows/**/*.csproj', '.github/workflows/build.yml', '.github/workflows/release.yml') }}
+          restore-keys: |
+            windows-2025-vs2026-${{ runner.arch }}-nuget-v1-${{ steps.dotnet.outputs.dotnet-version }}-
+
+      - name: Locate Android SDK
+        id: android-sdk
+        run: |
+          if (!$env:ANDROID_HOME) { throw 'The runner must provide ANDROID_HOME.' }
+          "root=$env:ANDROID_HOME" >> $env:GITHUB_OUTPUT
+
+      - name: Cache Android SDK packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.android-sdk.outputs.root }}/platforms/${{ env.STONE_ANDROID_PLATFORM }}
+            ${{ steps.android-sdk.outputs.root }}/build-tools/${{ env.STONE_ANDROID_BUILD_TOOLS }}
+          key: windows-2025-vs2026-${{ runner.arch }}-android-sdk-v1-${{ env.STONE_ANDROID_PLATFORM }}-${{ env.STONE_ANDROID_BUILD_TOOLS }}
+
+      - name: Prepare Visual Studio from .vsconfig
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $configPath = (Resolve-Path -LiteralPath .vsconfig).Path
+          $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+          $components = @($config.components)
+          if ($config.version -ne '1.0' -or !$components.Count) { throw 'Invalid .vsconfig.' }
+          $installerRoot = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer'
+          $vswhere = Join-Path $installerRoot 'vswhere.exe'
+          $vs = & $vswhere -latest -version '[18.0,19.0)' -products '*' `
+              -requires @components -property installationPath
+          if ($LASTEXITCODE -ne 0) { throw 'Visual Studio discovery failed.' }
+          if (!$vs) {
+              $instancesJson = & $vswhere -latest -version '[18.0,19.0)' -products '*' -format json
+              if ($LASTEXITCODE -ne 0) { throw 'Visual Studio discovery failed.' }
+              $instances = @($instancesJson | Out-String | ConvertFrom-Json)
+              if (!$instances.Count) { throw 'The runner must have Visual Studio 2026 installed.' }
+              $instance = $instances[0]
+              $arguments = @(
+                  'modify', '--installPath', ('"{0}"' -f $instance.installationPath),
+                  '--channelId', $instance.channelId, '--config', ('"{0}"' -f $configPath),
+                  '--quiet', '--norestart'
+              )
+              $installer = Start-Process -FilePath (Join-Path $installerRoot 'setup.exe') `
+                  -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
+              if ($installer.ExitCode -eq 3010) { throw 'Visual Studio installation requires a runner restart.' }
+              if ($installer.ExitCode -ne 0) { throw "Visual Studio Installer failed: $($installer.ExitCode)" }
+              $vs = & $vswhere -latest -version '[18.0,19.0)' -products '*' `
+                  -requires @components -property installationPath
+              if ($LASTEXITCODE -ne 0 -or !$vs) { throw 'Visual Studio components required by .vsconfig are missing.' }
+          }
+          "STONE_VS_INSTALLATION=$vs" >> $env:GITHUB_ENV
+
+      - name: Prepare remaining build dependencies
+        env:
+          STONE_DOTNET_SDK: ${{ steps.dotnet.outputs.dotnet-version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cmakeHelp = cmake --help | Out-String
+          if ($LASTEXITCODE -ne 0 -or $cmakeHelp -notmatch 'Visual Studio 18 2026') {
+              throw 'CMake must support the Visual Studio 18 2026 generator.'
+          }
+          # The image can contain newer SDKs; keep MSBuild on the selected .NET 10 SDK.
+          @{ sdk = @{ version = $env:STONE_DOTNET_SDK; rollForward = 'latestPatch' } } |
+              ConvertTo-Json | Set-Content -LiteralPath global.json -Encoding utf8
+          $sdkmanager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat'
+          & $sdkmanager --sdk_root=$env:ANDROID_HOME "platforms;$env:STONE_ANDROID_PLATFORM" "build-tools;$env:STONE_ANDROID_BUILD_TOOLS"
+          if ($LASTEXITCODE -ne 0) { throw 'Android SDK installation failed.' }
+          foreach ($relative in @("platforms/$env:STONE_ANDROID_PLATFORM/android.jar", "build-tools/$env:STONE_ANDROID_BUILD_TOOLS/lib/d8.jar")) {
+              if (!(Test-Path -LiteralPath (Join-Path $env:ANDROID_HOME $relative) -PathType Leaf)) {
+                  throw "Missing Android SDK input: $relative"
+              }
+          }
+          cmake --version
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot report CMake version.' }
+          dotnet --info
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot report .NET versions.' }
+
+      - name: Configure x64 tests
+        run: |
+          cmake --preset x64 -DSTONE_TESTS=ON -DSTONE_BUILD_SETTINGS=ON -DSTONE_PACKAGING=OFF `
+              "-DCMAKE_GENERATOR_INSTANCE=$env:STONE_VS_INSTALLATION" `
+              "-DSTONE_JDK_HOME=$env:JAVA_HOME" "-DSTONE_ANDROID_SDK=$env:ANDROID_HOME"
+          if ($LASTEXITCODE -ne 0) { throw 'x64 test configuration failed.' }
+
+      - name: Build Debug tests and fixtures
+        run: |
+          cmake --build build/x64 --config Debug --parallel --target stone-windows-tests stone-test-fixtures -- /restore
+          if ($LASTEXITCODE -ne 0) { throw 'Debug test build failed.' }
+
+      - name: Run x64 unit tests
+        working-directory: bin/x64/Debug
+        run: |
+          ctest --test-dir test/ctest/Debug -C Debug -N
+          if ($LASTEXITCODE -ne 0) { throw 'CTest discovery failed.' }
+          ctest --test-dir test/ctest/Debug -C Debug -L unit --no-tests=error --output-on-failure `
+              --output-junit "$PWD/test/unit-results.xml"
+          if ($LASTEXITCODE -ne 0) { throw 'Unit tests failed.' }
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: build-test-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            bin/x64/Debug/test/unit-results.xml
+            bin/x64/Debug/test/ctest/Debug/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Build Release applications
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($architecture in @('x64', 'ARM64')) {
+              cmake --preset $architecture -DSTONE_TESTS=OFF -DSTONE_PACKAGING=OFF `
+                  -DSTONE_BUILD_SETTINGS=ON -DSTONE_SETTINGS_AOT=ON -DSTONE_SETTINGS_TRIM=ON `
+                  "-DCMAKE_GENERATOR_INSTANCE=$env:STONE_VS_INSTALLATION" `
+                  "-DSTONE_JDK_HOME=$env:JAVA_HOME" "-DSTONE_ANDROID_SDK=$env:ANDROID_HOME"
+              if ($LASTEXITCODE -ne 0) { throw "$architecture Release configuration failed." }
+              cmake --build "build/$architecture" --config Release --parallel -- /restore
+              if ($LASTEXITCODE -ne 0) { throw "$architecture Release build failed." }
+              cmake --build "build/$architecture" --config Release --target StoneSettingsPublish -- /restore
+              if ($LASTEXITCODE -ne 0) { throw "$architecture settings AOT publication failed." }
+          }

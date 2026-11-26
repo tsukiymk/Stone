@@ -1,0 +1,7 @@
+add_executable(stone-ipc-tests host-state-tests.cpp)
+target_link_libraries(stone-ipc-tests PRIVATE stone-ipc)
+target_compile_options(stone-ipc-tests PRIVATE /utf-8)
+set_target_properties(stone-ipc-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${STONE_TEST_ROOT}/ipc/$<CONFIG>" FOLDER "Tests/IPC")
+add_test(NAME stone-ipc-host-state COMMAND stone-ipc-tests)
+set_tests_properties(stone-ipc-host-state PROPERTIES LABELS "ipc;unit" TIMEOUT 30)
+stone_test_context()

@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Stone Settings</value>
+  </data>
+  <data name="SearchSettings" xml:space="preserve">
+    <value>Search settings and apps</value>
+  </data>
+  <data name="SystemNavigation" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="AppsNavigation" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="NotificationsNavigation" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="PermissionsNavigation" xml:space="preserve">
+    <value>Permissions</value>
+  </data>
+  <data name="SystemDescription" xml:space="preserve">
+    <value>Choose an Android system image for the application runtime.</value>
+  </data>
+  <data name="AppsDescription" xml:space="preserve">
+    <value>Manage Android apps installed in Stone.</value>
+  </data>
+  <data name="NotificationsDescription" xml:space="preserve">
+    <value>Manage notification permissions for Android apps.</value>
+  </data>
+  <data name="PermissionsDescription" xml:space="preserve">
+    <value>Grant or revoke notification and all-files access for each app.</value>
+  </data>
+  <data name="AllApps" xml:space="preserve">
+    <value>All apps</value>
+  </data>
+  <data name="CatalogNotLoaded" xml:space="preserve">
+    <value>App list has not been loaded</value>
+  </data>
+  <data name="CheckImage" xml:space="preserve">
+    <value>Check the selected image in System.</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="NotificationGrantedDescription" xml:space="preserve">
+    <value>Allow this app to show notifications, subject to the global notification switch.</value>
+  </data>
+  <data name="Allow" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="Deny" xml:space="preserve">
+    <value>Don't allow</value>
+  </data>
+  <data name="StorageGrantedDescription" xml:space="preserve">
+    <value>Allow reading and writing /storage/emulated/0, mapped to storage\emulated\0 in the current Stone data directory. Other apps' private directories are excluded.</value>
+  </data>
+  <data name="DeclaredPermissions" xml:space="preserve">
+    <value>Declared permissions</value>
+  </data>
+  <data name="WelcomeTitle" xml:space="preserve">
+    <value>Welcome to Stone</value>
+  </data>
+  <data name="ChooseImage" xml:space="preserve">
+    <value>Choose system image</value>
+  </data>
+  <data name="Arm64Unavailable" xml:space="preserve">
+    <value>The ARM64 ART backend is not implemented. You can view the cached app list.</value>
+  </data>
+  <data name="SelectImageFirst" xml:space="preserve">
+    <value>Choose an Android system image in System.</value>
+  </data>
+  <data name="ReadAppsFailed" xml:space="preserve">
+    <value>Unable to load the app list right now.</value>
+  </data>
+  <data name="ReadNotificationsFailed" xml:space="preserve">
+    <value>Unable to read notification permissions.</value>
+  </data>
+  <data name="NotificationUndeclared" xml:space="preserve">
+    <value>This app has not declared notification permission.</value>
+  </data>
+  <data name="StorageUndeclared" xml:space="preserve">
+    <value>This app has not declared all-files access. It can still read and write its own external private directories.</value>
+  </data>
+  <data name="NoPermissions" xml:space="preserve">
+    <value>No permissions declared</value>
+  </data>
+  <data name="ReadPermissionsFailed" xml:space="preserve">
+    <value>Unable to read app permissions.</value>
+  </data>
+  <data name="SaveStorageFailed" xml:space="preserve">
+    <value>Unable to save all-files access permission.</value>
+  </data>
+  <data name="SaveNotificationsFailed" xml:space="preserve">
+    <value>Unable to save notification permissions.</value>
+  </data>
+  <data name="NoImage" xml:space="preserve">
+    <value>No system image selected</value>
+  </data>
+  <data name="NoMatchingApps" xml:space="preserve">
+    <value>No matching apps</value>
+  </data>
+  <data name="NoApps" xml:space="preserve">
+    <value>No apps installed</value>
+  </data>
+  <data name="TryAppName" xml:space="preserve">
+    <value>Try an app name or package name.</value>
+  </data>
+  <data name="InstallFirstApp" xml:space="preserve">
+    <value>Select “Install APK” to add an Android app.</value>
+  </data>
+  <data name="SearchResults" xml:space="preserve">
+    <value>Search results</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="OpenNotificationsFailed" xml:space="preserve">
+    <value>Unable to open Windows notification settings.</value>
+  </data>
+  <data name="InstallFailed" xml:space="preserve">
+    <value>Unable to install the app.</value>
+  </data>
+  <data name="ChooseImageFailed" xml:space="preserve">
+    <value>Unable to choose an Android system image.</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="InstallSource" xml:space="preserve">
+    <value>Installed by: {0}</value>
+  </data>
+  <data name="ApkFile" xml:space="preserve">
+    <value>APK file</value>
+  </data>
+  <data name="AppSize" xml:space="preserve">
+    <value>App size: {0:F1} MB</value>
+  </data>
+  <data name="Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="ManagePermissions" xml:space="preserve">
+    <value>Manage permissions</value>
+  </data>
+  <data name="Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="ManageAppFailed" xml:space="preserve">
+    <value>Unable to manage this app.</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="NotificationHeading" xml:space="preserve">
+    <value>Allow {0} to send notifications?</value>
+  </data>
+  <data name="PreparingInstallHeading" xml:space="preserve">
+    <value>Preparing to install {0}</value>
+  </data>
+  <data name="InstallHeading" xml:space="preserve">
+    <value>Install {0}?</value>
+  </data>
+  <data name="UpdateHeading" xml:space="preserve">
+    <value>Update {0}?</value>
+  </data>
+  <data name="UninstallHeading" xml:space="preserve">
+    <value>Uninstall {0}?</value>
+  </data>
+  <data name="PreapproveHeading" xml:space="preserve">
+    <value>Allow installation of {0}?</value>
+  </data>
+  <data name="AndroidApp" xml:space="preserve">
+    <value>Android app</value>
+  </data>
+  <data name="Package" xml:space="preserve">
+    <value>Package: {0}</value>
+  </data>
+  <data name="RequestedBy" xml:space="preserve">
+    <value>Requested by: {0}</value>
+  </data>
+  <data name="AppIcon" xml:space="preserve">
+    <value>{0} app icon</value>
+  </data>
+  <data name="UninstallInformation" xml:space="preserve">
+    <value>Uninstall information</value>
+  </data>
+  <data name="InstallInformation" xml:space="preserve">
+    <value>Requested permissions</value>
+  </data>
+  <data name="NotificationConfirmation" xml:space="preserve">
+    <value>Allow this app to send notifications through Windows. You can change this permission in Stone Settings at any time. The Stone notification switch, Windows notification permissions and Do not disturb settings also apply.</value>
+  </data>
+  <data name="UninstallConfirmation" xml:space="preserve">
+    <value>This app and its data will be deleted.</value>
+  </data>
+  <data name="PreapproveConfirmation" xml:space="preserve">
+    <value>Allow this app to be installed after its APK is downloaded and verified. App information is supplied by the requester.</value>
+  </data>
+  <data name="UnverifiedApp" xml:space="preserve">
+    <value>This app cannot be verified and cannot be installed right now.</value>
+  </data>
+  <data name="UpdateConfirmation" xml:space="preserve">
+    <value>This app will be updated. Existing app data will be kept.</value>
+  </data>
+  <data name="InstallConfirmation" xml:space="preserve">
+    <value>This app will be installed in Stone.</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Stone notification permission</value>
+  </data>
+  <data name="InstallerTitle" xml:space="preserve">
+    <value>Stone App Installer</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>{0}
+Version {1}</value>
+  </data>
+  <data name="ProjectHome" xml:space="preserve">
+    <value>Stone project homepage</value>
+  </data>
+  <data name="ThirdPartyNotices" xml:space="preserve">
+    <value>Third-party software notices</value>
+  </data>
+  <data name="AboutApplication" xml:space="preserve">
+    <value>About {0}</value>
+  </data>
+  <data name="ReadingApk" xml:space="preserve">
+    <value>Reading and verifying the package. Please wait…</value>
+  </data>
+  <data name="InstallUserUnavailable" xml:space="preserve">
+    <value>Unable to identify the installer window's user.</value>
+  </data>
+  <data name="Installing" xml:space="preserve">
+    <value>Installing. Please wait…</value>
+  </data>
+  <data name="UseImageFailed" xml:space="preserve">
+    <value>Unable to use this system image.</value>
+  </data>
+  <data name="RuntimeMissing" xml:space="preserve">
+    <value>The Stone runtime executable was not found.</value>
+  </data>
+  <data name="StartStoneFailed" xml:space="preserve">
+    <value>Unable to start Stone.</value>
+  </data>
+  <data name="PrepareAndroidFailed" xml:space="preserve">
+    <value>Unable to prepare Android. Check the system image or the Stone runtime log.</value>
+  </data>
+  <data name="AppCount" xml:space="preserve">
+    <value>{0} Android apps</value>
+  </data>
+  <data name="AppCountOne" xml:space="preserve">
+    <value>{0} Android app</value>
+  </data>
+  <data name="WaitingApps" xml:space="preserve">
+    <value>Waiting for app information</value>
+  </data>
+  <data name="AppIdentityChanged" xml:space="preserve">
+    <value>App information has changed. Reopen the permissions page.</value>
+  </data>
+  <data name="MainWindowWindowTitleBar.Title" xml:space="preserve">
+    <value>Stone Settings</value>
+  </data>
+  <data name="MainWindowPaneToggleButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Toggle navigation</value>
+  </data>
+  <data name="MainWindowPaneToggleButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Toggle navigation</value>
+  </data>
+  <data name="MainWindowSearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search settings and apps</value>
+  </data>
+  <data name="MainWindowSearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Search settings and apps</value>
+  </data>
+  <data name="MainWindowSystemNavigation.Content" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="MainWindowAppsNavigation.Content" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="MainWindowNotificationsNavigation.Content" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="MainWindowPermissionsNavigation.Content" xml:space="preserve">
+    <value>Permissions</value>
+  </data>
+  <data name="MainWindowPageTitle.Text" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="MainWindowPageDescription.Text" xml:space="preserve">
+    <value>Manage Android apps installed in Stone.</value>
+  </data>
+  <data name="MainWindowSystemImageTextBlock.Text" xml:space="preserve">
+    <value>Android system image</value>
+  </data>
+  <data name="MainWindowChooseImageButton.Content" xml:space="preserve">
+    <value>Change system image</value>
+  </data>
+  <data name="MainWindowImageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>The system image provides the Android environment. Changes apply to future launches; running apps keep their current environment.</value>
+  </data>
+  <data name="MainWindowSystemLoadingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Preparing system image</value>
+  </data>
+  <data name="MainWindowInstalledAppsTextBlock.Text" xml:space="preserve">
+    <value>Installed apps</value>
+  </data>
+  <data name="MainWindowInstallApkTextBlock.Text" xml:space="preserve">
+    <value>Install APK</value>
+  </data>
+  <data name="MainWindowAppsListHeading.Text" xml:space="preserve">
+    <value>All apps</value>
+  </data>
+  <data name="MainWindowEmptyTitle.Text" xml:space="preserve">
+    <value>App list has not been loaded</value>
+  </data>
+  <data name="MainWindowEmptyDescription.Text" xml:space="preserve">
+    <value>Check the selected image in System.</value>
+  </data>
+  <data name="MainWindowAppsLoadingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Loading apps</value>
+  </data>
+  <data name="MainWindowLoadingAppsStatusTextBlock.Text" xml:space="preserve">
+    <value>Loading apps…</value>
+  </data>
+  <data name="MainWindowAllowAppNotificationsTextBlock.Text" xml:space="preserve">
+    <value>Allow app notifications</value>
+  </data>
+  <data name="MainWindowNotificationsControlDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Control whether Android apps can show notifications.</value>
+  </data>
+  <data name="MainWindowAllNotifications.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="MainWindowAllNotifications.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="MainWindowAllNotifications.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Allow app notifications</value>
+  </data>
+  <data name="MainWindowWindowsNotificationsTextBlock.Text" xml:space="preserve">
+    <value>Windows notification settings</value>
+  </data>
+  <data name="MainWindowWindowsNotificationsDescriptionTextBlock.Text" xml:space="preserve">
+    <value>View notification permissions and Do not disturb settings for this device.</value>
+  </data>
+  <data name="MainWindowOpenWindowsNotificationsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Open Windows notification settings</value>
+  </data>
+  <data name="MainWindowAppNotificationsTextBlock.Text" xml:space="preserve">
+    <value>App notifications</value>
+  </data>
+  <data name="MainWindowOnToggleSwitch.OffContent" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="MainWindowOnToggleSwitch.OnContent" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="MainWindowPermissionAppSelector.Header" xml:space="preserve">
+    <value>Choose an app</value>
+  </data>
+  <data name="MainWindowPermissionAppSelector.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>App to manage permissions for</value>
+  </data>
+  <data name="MainWindowPermissionEmpty.Text" xml:space="preserve">
+    <value>Choose an app to manage its permissions.</value>
+  </data>
+  <data name="MainWindowNotificationsNavigationTextBlock.Text" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="MainWindowPermissionNotificationDescription.Text" xml:space="preserve">
+    <value>Allow this app to show notifications, subject to the global notification switch.</value>
+  </data>
+  <data name="MainWindowPermissionNotifications.OffContent" xml:space="preserve">
+    <value>Don't allow</value>
+  </data>
+  <data name="MainWindowPermissionNotifications.OnContent" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="MainWindowPermissionNotifications.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Notification permission for this app</value>
+  </data>
+  <data name="MainWindowAllFilesAccessTextBlock.Text" xml:space="preserve">
+    <value>All-files access</value>
+  </data>
+  <data name="MainWindowPermissionStorageDescription.Text" xml:space="preserve">
+    <value>Allow reading and writing /storage/emulated/0, mapped to storage\emulated\0 in the current Stone data directory. Other apps' private directories are excluded.</value>
+  </data>
+  <data name="MainWindowPermissionAllFiles.OffContent" xml:space="preserve">
+    <value>Don't allow</value>
+  </data>
+  <data name="MainWindowPermissionAllFiles.OnContent" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="MainWindowPermissionAllFiles.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>All-files access permission for this app</value>
+  </data>
+  <data name="MainWindowPrivateStorageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Apps can always read and write their own Android/data/&lt;package&gt;/files and cache without all-files access.</value>
+  </data>
+  <data name="MainWindowDeclaredPermissionsExpander.Header" xml:space="preserve">
+    <value>Declared permissions</value>
+  </data>
+  <data name="WelcomeWindowWelcomeTitleTextBlock.Text" xml:space="preserve">
+    <value>Welcome to Stone</value>
+  </data>
+  <data name="WelcomeWindowWelcomeDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Set up an Android system image to start using your apps on Windows.</value>
+  </data>
+  <data name="WelcomeWindowChooseImageButton.Content" xml:space="preserve">
+    <value>Choose system image</value>
+  </data>
+  <data name="WelcomeWindowWelcomeImageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Use a system.img file you have already downloaded.</value>
+  </data>
+  <data name="WelcomeWindowPreparingRing.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Preparing Android</value>
+  </data>
+  <data name="WelcomeWindowPreparingImageDescriptionTextBlock.Text" xml:space="preserve">
+    <value>Validating and preparing the system image. First-time setup may take a while.</value>
+  </data>
+  <data name="WelcomeWindowWindowTitleBar.Title" xml:space="preserve">
+    <value>Welcome to Stone</value>
+  </data>
+  <data name="ImageDownloadTitle.Text" xml:space="preserve"><value>Download Android system image</value></data>
+  <data name="ImageDownloadButton.Content" xml:space="preserve"><value>Download image</value></data>
+  <data name="ImageDownloadCancelButton.Content" xml:space="preserve"><value>Cancel download</value></data>
+  <data name="ImageDownloadUseButton.Content" xml:space="preserve"><value>Use this image</value></data>
+  <data name="ImageDownloadProgress.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>System image download progress</value></data>
+  <data name="ImageDownloadResolving" xml:space="preserve"><value>Finding the latest stable API 37 image…</value></data>
+  <data name="ImageDownloadVerifying" xml:space="preserve"><value>Verifying image integrity…</value></data>
+  <data name="ImageDownloadTransferring" xml:space="preserve"><value>Downloading: {0:N0} / {1:N0} MiB</value></data>
+  <data name="ImageDownloadExtracting" xml:space="preserve"><value>Extracting: {0:N0} / {1:N0} MiB</value></data>
+  <data name="ImageDownloadReady" xml:space="preserve"><value>Image downloaded. Select Use this image to continue.</value></data>
+  <data name="ImageDownloadCancelled" xml:space="preserve"><value>Download cancelled.</value></data>
+  <data name="ImageDownloadFailed" xml:space="preserve"><value>Image download failed: {0}</value></data>
+  <data name="ImageDownloadConsentTitle" xml:space="preserve"><value>Android SDK license</value></data>
+  <data name="ImageDownloadConsentDescription" xml:space="preserve"><value>Review and accept the SDK license to download this image.</value></data>
+  <data name="ImageDownloadAccept" xml:space="preserve"><value>Accept and download</value></data>
+  <data name="WelcomeSetupFooter.Text" xml:space="preserve"><value>Settings will open when your image is ready.</value></data>
+  <data name="WelcomeExistingImageTitle.Text" xml:space="preserve"><value>Import from your PC</value></data>
+  <data name="WelcomePreparingTitle.Text" xml:space="preserve"><value>Preparing Android</value></data>
+  <data name="WelcomeSetupHeading.Text" xml:space="preserve"><value>Set up your Android environment</value></data>
+  <data name="WelcomeRecommended.Text" xml:space="preserve"><value>Recommended</value></data>
+  <data name="ImageDownloadSetupDescription.Text" xml:space="preserve"><value>Download the system files needed to run Android apps.</value></data>
+  <data name="PermissionsUnavailable" xml:space="preserve"><value>Permission information is unavailable.</value></data>
+  <data name="PermissionInternet" xml:space="preserve"><value>Access the internet</value></data>
+  <data name="PermissionNetworkState" xml:space="preserve"><value>View network connections</value></data>
+  <data name="PermissionWifiState" xml:space="preserve"><value>View Wi-Fi connections</value></data>
+  <data name="PermissionChangeWifi" xml:space="preserve"><value>Change Wi-Fi connections</value></data>
+  <data name="PermissionCamera" xml:space="preserve"><value>Use the camera</value></data>
+  <data name="PermissionMicrophone" xml:space="preserve"><value>Record audio</value></data>
+  <data name="PermissionApproximateLocation" xml:space="preserve"><value>Access approximate location</value></data>
+  <data name="PermissionPreciseLocation" xml:space="preserve"><value>Access precise location</value></data>
+  <data name="PermissionBackgroundLocation" xml:space="preserve"><value>Access location in the background</value></data>
+  <data name="PermissionNotifications" xml:space="preserve"><value>Send notifications</value></data>
+  <data name="PermissionReadContacts" xml:space="preserve"><value>Read contacts</value></data>
+  <data name="PermissionWriteContacts" xml:space="preserve"><value>Modify contacts</value></data>
+  <data name="PermissionReadCalendar" xml:space="preserve"><value>Read calendar events</value></data>
+  <data name="PermissionWriteCalendar" xml:space="preserve"><value>Modify calendar events</value></data>
+  <data name="PermissionReadStorage" xml:space="preserve"><value>Read shared storage</value></data>
+  <data name="PermissionWriteStorage" xml:space="preserve"><value>Modify shared storage</value></data>
+  <data name="PermissionAllFiles" xml:space="preserve"><value>Access all files</value></data>
+  <data name="PermissionImages" xml:space="preserve"><value>Read photos and images</value></data>
+  <data name="PermissionVideo" xml:space="preserve"><value>Read videos</value></data>
+  <data name="PermissionAudio" xml:space="preserve"><value>Read music and audio</value></data>
+  <data name="PermissionBluetooth" xml:space="preserve"><value>Connect to Bluetooth devices</value></data>
+  <data name="PermissionBluetoothScan" xml:space="preserve"><value>Find nearby Bluetooth devices</value></data>
+  <data name="PermissionBluetoothSettings" xml:space="preserve"><value>Manage Bluetooth settings</value></data>
+  <data name="PermissionPhoneState" xml:space="preserve"><value>Read phone status</value></data>
+  <data name="PermissionCallPhone" xml:space="preserve"><value>Make phone calls</value></data>
+  <data name="PermissionReadSms" xml:space="preserve"><value>Read text messages</value></data>
+  <data name="PermissionSendSms" xml:space="preserve"><value>Send text messages</value></data>
+  <data name="PermissionInstallPackages" xml:space="preserve"><value>Request app installation</value></data>
+  <data name="PermissionDeletePackages" xml:space="preserve"><value>Request app removal</value></data>
+  <data name="PermissionWakeLock" xml:space="preserve"><value>Keep the device awake</value></data>
+  <data name="PermissionBoot" xml:space="preserve"><value>Run after startup</value></data>
+  <data name="PermissionForegroundService" xml:space="preserve"><value>Run foreground services</value></data>
+  <data name="PermissionVibrate" xml:space="preserve"><value>Control vibration</value></data>
+  <data name="PermissionBluetoothLegacy" xml:space="preserve"><value>Use Bluetooth</value></data>
+  <data name="CannotInstallHeading" xml:space="preserve"><value>Cannot install this app</value></data>
+  <data name="InstallFailureTitle" xml:space="preserve"><value>Installation failed</value></data>
+  <data name="InstallFailureReason" xml:space="preserve"><value>The app could not be installed.</value></data>
+  <data name="InstallFailureSuggestion" xml:space="preserve"><value>Review the error details, check the APK and system image, then try again.</value></data>
+  <data name="InstallFailureNativeAbiTitle" xml:space="preserve"><value>App architecture is incompatible</value></data>
+  <data name="InstallFailureNativeAbiReason" xml:space="preserve"><value>This APK contains native libraries for {0}, but the selected system image uses {1}. These architectures are incompatible.</value></data>
+  <data name="InstallFailureNativeAbiSuggestion" xml:space="preserve"><value>Choose a 64-bit APK containing {1} native libraries. This image cannot execute other native ABIs or 32-bit libraries.</value></data>
+  <data name="InstallFailureAndroidApiTitle" xml:space="preserve"><value>Android version is too old</value></data>
+  <data name="InstallFailureAndroidApiReason" xml:space="preserve"><value>This APK requires Android API {0}, but the selected system image provides API {1}.</value></data>
+  <data name="InstallFailureAndroidApiSuggestion" xml:space="preserve"><value>Use a system image providing Android API {0} or later, or choose a compatible older version of the app.</value></data>
+  <data name="InstallFailureImageAbiTitle" xml:space="preserve"><value>System image architecture is unsupported</value></data>
+  <data name="InstallFailureImageAbiReason" xml:space="preserve"><value>The selected system image does not provide a supported 64-bit application ABI.</value></data>
+  <data name="InstallFailureImageAbiSuggestion" xml:space="preserve"><value>Select a complete x86_64 or arm64-v8a Android system image. 32-bit native execution is unsupported.</value></data>
+  <data name="InstallFailureSharedUidTitle" xml:space="preserve"><value>Shared application identity is unsupported</value></data>
+  <data name="InstallFailureSharedUidReason" xml:space="preserve"><value>This APK requests a shared Android UID. Stone does not support installing shared-UID apps.</value></data>
+  <data name="InstallFailureSharedUidSuggestion" xml:space="preserve"><value>Choose a version of the app that does not require a shared UID.</value></data>
+  <data name="InstallFailureSplitApkTitle" xml:space="preserve"><value>Split APK installation is unsupported</value></data>
+  <data name="InstallFailureSplitApkReason" xml:space="preserve"><value>This app uses split APKs. Stone currently supports standalone APK installation only.</value></data>
+  <data name="InstallFailureSplitApkSuggestion" xml:space="preserve"><value>Download a complete standalone or universal APK instead of an individual split.</value></data>
+  <data name="ErrorDetails" xml:space="preserve"><value>Error details</value></data>
+  <data name="OpenApp" xml:space="preserve"><value>Open app</value></data>
+  <data name="OpenAppFailed" xml:space="preserve"><value>Unable to open app</value></data>
+  <data name="InvalidAppPackage" xml:space="preserve"><value>The application's package name is invalid.</value></data>
+</root>

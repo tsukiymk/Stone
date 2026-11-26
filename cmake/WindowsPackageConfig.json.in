@@ -1,0 +1,23 @@
+{
+  "architecture": "@package_arch_json@",
+  "configuration": "$<CONFIG>",
+  "version": "@STONE_PACKAGE_VERSION_json@",
+  "name": "@STONE_PACKAGE_NAME_json@",
+  "publisher": "@STONE_PACKAGE_PUBLISHER_json@",
+  "runtimeDirectory": "@stone_platform_bin_json@/$<CONFIG>",
+  "outputDirectory": "@package_directory_json@",
+  "sourceDirectory": "@PROJECT_SOURCE_DIR_json@",
+  "settingsProject": "@PROJECT_BINARY_DIR_json@/src/windows/settings/StoneSettings.csproj",
+  "msbuild": "@CMAKE_VS_MSBUILD_COMMAND_json@",
+  "wix": "@STONE_WIX_EXECUTABLE_json@",
+  "makeappx": "@STONE_MAKEAPPX_EXECUTABLE_json@",
+  "makepri": "@STONE_MAKEPRI_EXECUTABLE_json@",
+  "signtool": "@STONE_SIGNTOOL_EXECUTABLE_json@",
+  "certificateThumbprint": "@STONE_PACKAGE_CERTIFICATE_THUMBPRINT_json@",
+  "timestampUrl": "@STONE_PACKAGE_TIMESTAMP_URL_json@",
+  "installService": true,
+  "crt": [
+@package_crt@  ],
+  "bundleInputs": [
+@package_bundle_inputs@  ]
+}

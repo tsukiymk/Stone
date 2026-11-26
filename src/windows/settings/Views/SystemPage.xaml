@@ -1,0 +1,73 @@
+<Page
+    x:Class="StoneSettings.Views.SystemPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:StoneSettings.Models"
+    xmlns:controls="using:StoneSettings.Controls">
+    <ScrollViewer
+        x:Name="SystemPanel"
+        x:FieldModifier="internal"
+        VerticalScrollBarVisibility="Auto"
+        HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="16">
+            <Border Style="{StaticResource SettingCardStyle}" Padding="20">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border
+                        Background="{ThemeResource AccentFillColorTertiaryBrush}"
+                        CornerRadius="12"
+                        Width="48"
+                        Height="48">
+                        <FontIcon
+                            Glyph="&#xE770;"
+                            FontSize="23"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                    </Border>
+                    <StackPanel
+                        Grid.Column="1"
+                        Spacing="6"
+                        VerticalAlignment="Center">
+                        <TextBlock x:Uid="MainWindowSystemImageTextBlock" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="SystemImagePath"
+                            AutomationProperties.AutomationId="SystemImagePath"
+                            x:FieldModifier="internal"
+                            Style="{StaticResource SecondaryTextStyle}"
+                            TextWrapping="Wrap"
+                            IsTextSelectionEnabled="True"
+                            Text="{x:Bind ViewModel.ImagePath, Mode=OneWay}" />
+                    </StackPanel>
+                    <Button
+                        x:Uid="MainWindowChooseImageButton"
+                        x:Name="ChooseImageButton"
+                        x:FieldModifier="internal"
+                        Grid.Column="2"
+                        Click="ChooseImageClicked"
+                        IsEnabled="{x:Bind ViewModel.IsIdle, Mode=OneWay}"
+                        VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+            <controls:SystemImageDownloadCard State="{x:Bind ViewModel.Download, Mode=OneWay}"
+                DownloadRequested="DownloadRequested" CancelRequested="CancelRequested" UseRequested="UseRequested" />
+            <TextBlock
+                x:Uid="MainWindowImageDescriptionTextBlock"
+                Style="{StaticResource SecondaryTextStyle}"
+                TextWrapping="Wrap" />
+            <ProgressRing
+                x:Uid="MainWindowSystemLoadingRing"
+                x:Name="SystemLoadingRing"
+                x:FieldModifier="internal"
+                IsActive="False"
+                Visibility="Collapsed"
+                Width="40"
+                Height="40"
+                HorizontalAlignment="Center" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

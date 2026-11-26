@@ -1,0 +1,12 @@
+add_executable(StoneClient main.cpp StoneClient.rc StoneClient.ico resource.h ../service/app.manifest)
+target_include_directories(StoneClient PRIVATE
+    "$<$<COMPILE_LANGUAGE:RC>:${CMAKE_CURRENT_SOURCE_DIR}>")
+target_link_libraries(StoneClient PRIVATE stone-host)
+set_target_properties(StoneClient PROPERTIES ENABLE_EXPORTS ON)
+target_compile_features(StoneClient PRIVATE cxx_std_20)
+target_compile_definitions(StoneClient PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE)
+target_compile_options(StoneClient PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/W4;/utf-8>")
+if(STONE_WINDOWS_ARCH STREQUAL "x64")
+    target_sources(StoneClient PRIVATE ArtLaunch.cpp ArtLaunch.h)
+    add_dependencies(StoneClient stone-art-runtime stone-image-tools)
+endif()

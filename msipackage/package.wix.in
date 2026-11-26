@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Stone" Manufacturer="Trebledot" Language="1033"
+           Version="@MSI_VERSION@" UpgradeCode="@UPGRADE_CODE@"
+           Scope="perMachine" InstallerVersion="500" Compressed="yes">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Stone is already installed."
+                  Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+    <Icon Id="StoneProductIcon" SourceFile="@BRAND_ICON_SOURCE@" />
+    <Property Id="ARPPRODUCTICON" Value="StoneProductIcon" />
+    <Property Id="STONE_WINDOWS_BUILD">
+      <RegistrySearch Id="WindowsBuild" Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+                      Name="CurrentBuildNumber" Type="raw" Bitness="always64" />
+    </Property>
+    <Launch Condition="Installed OR (VersionNT64 AND STONE_WINDOWS_BUILD &gt;= 19041)"
+            Message="Stone requires 64-bit Windows 10 version 2004 or later." />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="PublisherFolder" Name="Trebledot Productions">
+        <Directory Id="INSTALLFOLDER" Name="Stone">
+@DIRECTORIES@
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+    <Property Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" />
+    <Feature Id="StoneRuntime" Title="Stone" Level="1">
+      <ComponentGroupRef Id="Payload" />
+      <ComponentRef Id="SettingsShortcut" />
+      <ComponentRef Id="StoneWindowsService" />
+    </Feature>
+    <Component Id="StoneWindowsService" Directory="INSTALLFOLDER" Guid="*" Bitness="always64">
+      <File Id="StoneServiceExecutable" Source="@SERVICE_SOURCE@" KeyPath="yes" />
+      <ServiceInstall Id="InstallStoneService" Name="StoneService" DisplayName="Stone Service"
+                      Description="Manages Stone brokers in signed-in Windows sessions."
+                      Type="ownProcess" Start="auto" ErrorControl="normal" Account="LocalSystem"
+                      Arguments="--service" Vital="yes" />
+      <ServiceControl Id="ControlStoneService" Name="StoneService" Start="install" Stop="both"
+                      Remove="uninstall" Wait="yes" />
+    </Component>
+    <Component Id="SettingsShortcut" Directory="INSTALLFOLDER" Guid="*" Bitness="always64">
+      <Shortcut Id="StoneSettingsShortcut" Directory="ProgramMenuFolder" Name="Stone"
+                Target="[INSTALLFOLDER]settings\StoneSettings.exe" WorkingDirectory="INSTALLFOLDER"
+                Icon="StoneProductIcon" IconIndex="0" />
+      <RegistryValue Root="HKLM" Key="Software\Trebledot\Stone\@ARCH@"
+                     Name="InstallLocation" Value="[INSTALLFOLDER]" Type="string" KeyPath="yes" />
+    </Component>
+  </Package>
+  <Fragment>
+    <ComponentGroup Id="Payload">
+@COMPONENTS@
+    </ComponentGroup>
+  </Fragment>
+</Wix>

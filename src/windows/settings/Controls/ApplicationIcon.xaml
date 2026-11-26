@@ -1,0 +1,11 @@
+<UserControl
+    x:Class="StoneSettings.Controls.ApplicationIcon"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Border x:Name="Fallback" CornerRadius="8" Background="{ThemeResource ControlFillColorSecondaryBrush}">
+            <FontIcon Glyph="&#xE71D;" FontSize="20" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </Border>
+        <Image x:Name="Picture" Stretch="Uniform" Visibility="Collapsed" />
+    </Grid>
+</UserControl>

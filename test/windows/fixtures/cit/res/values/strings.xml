@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Stone CIT</string>
+    <string name="input_instructions">Use two fingers in the blue area. Click or press K to test mouse and keyboard.</string>
+    <string name="components_title">Android components</string>
+    <string name="save">Save note</string>
+    <string name="hint">Write a note</string>
+    <string name="example">Café • 离线笔记 📝</string>
+</resources>

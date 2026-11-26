@@ -1,0 +1,53 @@
+package com.trebledot.stone.runtime;
+
+import android.os.IInterface;
+import android.os.IBinder;
+import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+/** Local editor client registry; no Android IME engine is exposed. */
+final class ArtInputMethod {
+    private final Map<IBinder, Object[]> clients = new HashMap<>();
+
+    /** One contiguous Win32 text burst; each character retains its edit callback. */
+    static final class TextSession implements AutoCloseable {
+        private View editor;
+        private InputConnection connection;
+
+        boolean commitText(View target, CharSequence text) {
+            if (target != editor || connection == null) {
+                close();
+                editor = target;
+                if (target != null) connection = target.onCreateInputConnection(new EditorInfo());
+            }
+            if (connection == null) return false;
+            boolean accepted = connection.commitText(text, 1);
+            if (!accepted) close();
+            return accepted;
+        }
+
+        @Override public void close() {
+            InputConnection previous = connection;
+            connection = null; editor = null;
+            if (previous != null) previous.closeConnection();
+        }
+    }
+
+    Object call(Object instance, Method method, Object[] arguments) throws ReflectiveOperationException {
+        switch (method.getName()) {
+            case "addClient":
+                clients.put(((IInterface) arguments[0]).asBinder(), arguments.clone());
+                return null;
+            case "startInputOrWindowGainedFocus":
+                return Class.forName("com.android.internal.inputmethod.InputBindResult").getField("NO_IME").get(null);
+            case "getImeTrackerService": return null;
+            case "showSoftInput":
+            case "hideSoftInput": return false;
+            default: throw new UnsupportedOperationException("ART input method service: " + method.getName());
+        }
+    }
+}

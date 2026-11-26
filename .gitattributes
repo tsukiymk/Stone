@@ -1,0 +1,3 @@
+# Preserve the pinned upstream release bytes and its original whitespace.
+oss/miniz/miniz* -text whitespace=-blank-at-eol,cr-at-eol
+oss/miniz/LICENSE -text whitespace=cr-at-eol
