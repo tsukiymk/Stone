@@ -6,7 +6,6 @@ param(
     [Parameter(Mandatory)][string]$DataDirectory,
     [Parameter(Mandatory)][string]$SystemImage,
     [Parameter(Mandatory)][string]$CacheDirectory,
-    [string]$AngleDirectory,
     [string]$OutputDirectory = 'bin/x64/Debug/test/upgrade-restart',
     [int]$TimeoutSeconds = 180
 )
@@ -26,7 +25,7 @@ $sentinel = Join-Path $profile "data/data/$PackageName/files/stone-upgrade-probe
 if (!(Test-Path -LiteralPath $sentinel -PathType Leaf)) { throw 'Prepare a private upgrade data sentinel before this restart test' }
 $privateHash = (Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash
 . (Join-Path $PSScriptRoot 'RunBackground.ps1') -RuntimeDirectory $RuntimeDirectory -FixtureApk $original `
-    -SystemImage $SystemImage -CacheDirectory $CacheDirectory -AngleDirectory $AngleDirectory -OutputDirectory $OutputDirectory -TimeoutSeconds $TimeoutSeconds -LibraryOnly
+    -SystemImage $SystemImage -CacheDirectory $CacheDirectory -OutputDirectory $OutputDirectory -TimeoutSeconds $TimeoutSeconds -LibraryOnly
 # Reuse the existing upgrade profile; the shared helper owns only this isolated
 # runtime's processes and saves/restores the current user's protocol values.
 $root = $profile
@@ -34,7 +33,6 @@ $diagnostics = Join-Path $root "data/stone-diagnostics/$PackageName"
 $savedDiagnostics = $env:STONE_ART_DIAGNOSTICS
 try {
     $env:STONE_ART_DIAGNOSTICS = '1'
-    if ($AngleDirectory) { $env:STONE_ANGLE_DIR = (Resolve-Path -LiteralPath $AngleDirectory).Path }
     foreach ($mode in @('apk','uri')) {
         $statePath = Join-Path $diagnostics 'state.txt'
         foreach ($file in @('state.txt','frame.png')) {

@@ -67,9 +67,16 @@ target_include_directories(stone-host PUBLIC
     "${PROJECT_SOURCE_DIR}/src/windows/client"
     "${STONE_JDK_HOME}/include"
     "${STONE_JDK_HOME}/include/win32"
-    "${oss_dir}/angle/include"
     "${sqlite_dir}"
 )
+
+find_path(angle_include NAMES EGL/eglext_angle.h
+    PATHS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
+    REQUIRED NO_CACHE NO_DEFAULT_PATH)
+if(NOT EXISTS "${angle_include}/EGL/egl.h" OR NOT EXISTS "${angle_include}/GLES3/gl3.h")
+    message(FATAL_ERROR "Missing vcpkg ANGLE headers: ${angle_include}")
+endif()
+target_include_directories(stone-host PUBLIC "${angle_include}")
 target_link_libraries(stone-host PUBLIC
     advapi32 comctl32 delayimp dwmapi user32 gdi32 icu mfplat mfuuid ole32 propsys shell32 shlwapi userenv uxtheme windowscodecs winmm wmcodecdspuuid
 )

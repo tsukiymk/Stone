@@ -55,7 +55,7 @@ string(REGEX REPLACE ",\n$" "\n" package_bundle_inputs "${package_bundle_inputs}
 # Certificate subjects may contain quotes; explicit tool paths may use Windows
 # separators. Escape JSON independently from XML and command-line quoting.
 foreach(value IN ITEMS package_arch STONE_PACKAGE_VERSION STONE_PACKAGE_NAME STONE_PACKAGE_PUBLISHER
-        stone_platform_bin package_directory PROJECT_SOURCE_DIR PROJECT_BINARY_DIR CMAKE_VS_MSBUILD_COMMAND
+        stone_platform_bin package_directory PROJECT_SOURCE_DIR PROJECT_BINARY_DIR CMAKE_VS_MSBUILD_COMMAND CMAKE_COMMAND
         STONE_WIX_EXECUTABLE STONE_MAKEAPPX_EXECUTABLE STONE_MAKEPRI_EXECUTABLE STONE_SIGNTOOL_EXECUTABLE
         STONE_PACKAGE_CERTIFICATE_THUMBPRINT STONE_PACKAGE_TIMESTAMP_URL)
     string(REPLACE "\\" "\\\\" escaped "${${value}}")

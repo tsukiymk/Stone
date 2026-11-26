@@ -4,7 +4,6 @@ param(
     [Parameter(Mandatory)][string]$TargetApk,
     [Parameter(Mandatory)][string]$SystemImage,
     [Parameter(Mandatory)][string]$CacheDirectory,
-    [string]$AngleDirectory,
     [string]$OutputDirectory='bin/x64/Debug/test/activity-routes',
     [switch]$RestartService,
     [switch]$ResolveIntents,
@@ -17,7 +16,7 @@ $target=(Resolve-Path -LiteralPath $TargetApk).Path
 $output=[IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath (Join-Path $output 'profile/data')) { throw 'Choose a fresh isolated route output directory' }
 . (Join-Path $PSScriptRoot 'RunBackground.ps1') -RuntimeDirectory $RuntimeDirectory -FixtureApk $SourceApk `
-    -SystemImage $SystemImage -CacheDirectory $CacheDirectory -AngleDirectory $AngleDirectory -OutputDirectory $output -TimeoutSeconds $TimeoutSeconds -LibraryOnly
+    -SystemImage $SystemImage -CacheDirectory $CacheDirectory -OutputDirectory $output -TimeoutSeconds $TimeoutSeconds -LibraryOnly
 $sourceEvents=Join-Path $root 'data/data/com.trebledot.stone.route.source/files/events.txt'
 $targetEvents=Join-Path $root 'data/data/com.trebledot.stone.route.target/files/events.txt'
 try {
@@ -27,7 +26,6 @@ try {
     if ($ResolveIntents) { [IO.File]::WriteAllText((Join-Path $root 'data/stone-route-resolution.txt'),'1',[Text.Encoding]::ASCII) }
     if ($BackResult) { [IO.File]::WriteAllText((Join-Path $root 'data/stone-route-back.txt'),'1',[Text.Encoding]::ASCII) }
     Copy-Item -LiteralPath $target -Destination (Join-Path $root 'data/route-target.apk')
-    if ($AngleDirectory) { $env:STONE_ANGLE_DIR=(Resolve-Path -LiteralPath $AngleDirectory).Path }
     $launch=Control @('--apk',$fixture,'--data-dir',$root,'--system-image',$image) | ConvertFrom-Json
     $client=Get-Process -Id $launch.client; $null=$client.Handle; $clients+=$client
     if ($RestartService) {

@@ -1,0 +1,8 @@
+{
+  "name": "opengl-registry",
+  "version-date": "2026-08-03",
+  "description": "OpenGL registry headers from the pinned upstream Git tree",
+  "homepage": "https://github.com/KhronosGroup/OpenGL-Registry",
+  "supports": "!xbox",
+  "dependencies": ["egl-registry"]
+}

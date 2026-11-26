@@ -20,6 +20,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_NOLOGO: '1'
   NUGET_PACKAGES: ${{ github.workspace }}/build/cache/nuget/
+  VCPKG_ROOT: ${{ github.workspace }}/build/tools/vcpkg
   STONE_ANDROID_PLATFORM: 'android-37.0'
   STONE_ANDROID_BUILD_TOOLS: '36.0.0'
 
@@ -100,6 +101,7 @@ jobs:
               if ($LASTEXITCODE -ne 0 -or !$vs) { throw 'Visual Studio components required by .vsconfig are missing.' }
           }
           "STONE_VS_INSTALLATION=$vs" >> $env:GITHUB_ENV
+          "VCPKG_VISUAL_STUDIO_PATH=$vs" >> $env:GITHUB_ENV
 
       - name: Prepare remaining build dependencies
         env:
@@ -126,6 +128,31 @@ jobs:
           dotnet --info
           if ($LASTEXITCODE -ne 0) { throw 'Cannot report .NET versions.' }
 
+      - name: Read vcpkg baseline and default cache locations
+        id: vcpkg
+        run: |
+          $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+          if ($baseline -notmatch '^[0-9a-f]{40}$') { throw 'Invalid vcpkg baseline.' }
+          "revision=$baseline" >> $env:GITHUB_OUTPUT
+          "downloads=$env:VCPKG_ROOT/downloads" >> $env:GITHUB_OUTPUT
+          "archives=$env:LOCALAPPDATA/vcpkg/archives" >> $env:GITHUB_OUTPUT
+
+      - name: Provide external vcpkg checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: microsoft/vcpkg
+          ref: ${{ steps.vcpkg.outputs.revision }}
+          path: build/tools/vcpkg
+          persist-credentials: false
+
+      - name: Cache vcpkg downloads and binary packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.vcpkg.outputs.downloads }}
+            ${{ steps.vcpkg.outputs.archives }}
+          key: windows-2025-vs2026-vcpkg-v3-${{ hashFiles('vcpkg.json', 'dep/vcpkg-overlay-ports/**', 'dep/vcpkg-overlay-triplets/**') }}
+
       - name: Configure x64 tests
         run: |
           cmake --preset x64 -DSTONE_TESTS=ON -DSTONE_BUILD_SETTINGS=ON -DSTONE_PACKAGING=OFF `
@@ -137,6 +164,15 @@ jobs:
         run: |
           cmake --build build/x64 --config Debug --parallel --target stone-windows-tests stone-test-fixtures -- /restore
           if ($LASTEXITCODE -ne 0) { throw 'Debug test build failed.' }
+
+      - name: Build and check the bundled x64 ANGLE runtime
+        working-directory: bin/x64/Debug
+        run: |
+          cmake --build ../../../build/x64 --config Debug --parallel --target stone-angle
+          if ($LASTEXITCODE -ne 0) { throw 'ANGLE source build failed.' }
+          ctest --test-dir test/ctest/Debug -C Debug -R '^stone-angle-runtime-tests$' --no-tests=error --output-on-failure `
+              --output-junit "$PWD/test/angle-results.xml"
+          if ($LASTEXITCODE -ne 0) { throw 'Bundled ANGLE rendering check failed.' }
 
       - name: Run x64 unit tests
         working-directory: bin/x64/Debug
@@ -154,6 +190,7 @@ jobs:
           name: build-test-results-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             bin/x64/Debug/test/unit-results.xml
+            bin/x64/Debug/test/angle-results.xml
             bin/x64/Debug/test/ctest/Debug/Testing/Temporary/LastTest.log
           if-no-files-found: ignore
           retention-days: 14

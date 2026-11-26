@@ -5,7 +5,6 @@ param(
     [Parameter(Mandatory)][string]$DataDirectory,
     [Parameter(Mandatory)][string]$SystemImage,
     [Parameter(Mandatory)][string]$CacheDirectory,
-    [string]$AngleDirectory,
     [string]$OutputDirectory = 'bin/x64/Debug/test/art-frame-timings',
     [ValidateRange(10,3600)][int]$TimeoutSeconds = 180,
     [switch]$EnableJit
@@ -15,16 +14,15 @@ $profile = (Resolve-Path -LiteralPath $DataDirectory).Path
 $original = (Resolve-Path -LiteralPath $Apk).Path
 $timingFile = Join-Path $profile "data/stone-diagnostics/$PackageName/frame-timings.csv"
 . (Join-Path $PSScriptRoot 'RunBackground.ps1') -RuntimeDirectory $RuntimeDirectory -FixtureApk $original `
-    -SystemImage $SystemImage -CacheDirectory $CacheDirectory -AngleDirectory $AngleDirectory -OutputDirectory $OutputDirectory -TimeoutSeconds $TimeoutSeconds -LibraryOnly
+    -SystemImage $SystemImage -CacheDirectory $CacheDirectory -OutputDirectory $OutputDirectory -TimeoutSeconds $TimeoutSeconds -LibraryOnly
 $saved = @{}
-foreach ($name in @('STONE_ART_FRAME_TIMINGS','STONE_ART_DIAGNOSTICS','STONE_ANGLE_DIR')) { $saved[$name] = [Environment]::GetEnvironmentVariable($name) }
+foreach ($name in @('STONE_ART_FRAME_TIMINGS','STONE_ART_DIAGNOSTICS')) { $saved[$name] = [Environment]::GetEnvironmentVariable($name) }
 try {
     $client = Join-Path $runtime 'StoneClient.exe'
     # Navigation timings do not validate inbound LAN traffic. Keep Windows
     # firewall policy unchanged; LAN exchange tests have their own preflight.
     $env:STONE_ART_FRAME_TIMINGS = '1'
     $env:STONE_ART_DIAGNOSTICS = '0'
-    if ($AngleDirectory) { $env:STONE_ANGLE_DIR = (Resolve-Path -LiteralPath $AngleDirectory).Path }
     $requested = [DateTime]::UtcNow
     $arguments = '--apk "{0}" --data-dir "{1}" --system-image "{2}"' -f $original,$profile,$image
     if ($EnableJit) { $arguments += ' --enable-jit' }

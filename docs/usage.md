@@ -8,6 +8,8 @@ Windows x64 supports x86_64 images and experimental translation of arm64-v8a ima
 
 Image preparation uses the bundled standalone native `StoneImageTool.exe`. Neither preparation nor APK execution requires a Windows JDK, JVM, or installed .NET runtime.
 
+Release packages include the Windows ANGLE EGL/GLES runtime and its D3DCompiler dependency beside `StoneClient.exe`. No Android SDK or separate ANGLE installation is required. See [graphics runtime loading](android/graphics-input.md#software-drawing-and-bitmaps) for DLL requirements and failure behavior.
+
 StoneSettings can [download a stable AOSP API 37 x86_64 image](windows/settings.md#downloading-an-android-image) to `%LOCALAPPDATA%\Trebledot Productions\Stone\System Images`. After download, choose **Use this image** to validate and save it for the selected Android data root.
 
 ## Launching and data

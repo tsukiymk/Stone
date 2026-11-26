@@ -59,6 +59,36 @@ function Assert-PackageTree([string]$Path) {
     }
 }
 
+function Assert-PackageBinary([string]$Path, [string]$Architecture) {
+    $machine = switch ($Architecture.ToLowerInvariant()) {
+        'x64' { 0x8664 }
+        'arm64' { 0xaa64 }
+        default { throw "Unsupported package architecture: $Architecture" }
+    }
+    $entry = Get-Item -LiteralPath $Path -Force
+    while ($entry) {
+        if ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw "Package input is a reparse point: $($entry.FullName)"
+        }
+        $entry = if ($entry -is [IO.DirectoryInfo]) { $entry.Parent } else { $entry.Directory }
+    }
+    $reader = [IO.BinaryReader]::new([IO.File]::OpenRead($Path))
+    try {
+        if ($reader.BaseStream.Length -lt 64 -or $reader.ReadUInt16() -ne 0x5a4d) { throw "Invalid PE file: $Path" }
+        $reader.BaseStream.Position = 0x3c
+        $offset = $reader.ReadUInt32()
+        if ($offset -gt $reader.BaseStream.Length - 24) { throw "Invalid PE header: $Path" }
+        $reader.BaseStream.Position = $offset
+        if ($reader.ReadUInt32() -ne 0x4550 -or $reader.ReadUInt16() -ne $machine) {
+            throw "PE architecture mismatch: $Path (expected $Architecture)"
+        }
+        $reader.BaseStream.Position = $offset + 22
+        if ([IO.Path]::GetExtension($Path) -ieq '.dll' -and !($reader.ReadUInt16() -band 0x2000)) {
+            throw "Package input is not a DLL: $Path"
+        }
+    } finally { $reader.Dispose() }
+}
+
 function Sign-Package($Config, [string]$Path) {
     if (!$Config.certificateThumbprint) {
         Write-Host "Unsigned package (sign before deployment): $Path"

@@ -5,7 +5,6 @@ param(
     [Parameter(Mandatory)][string]$ProbeDex,
     [Parameter(Mandatory)][string]$FixtureApk,
     [Parameter(Mandatory)][string]$ArtRuntimeJar,
-    [string]$AngleDirectory,
     [string]$OutputDirectory = 'bin/x64/Debug/test/jobs',
     [int]$TimeoutSeconds = 180
 )
@@ -21,8 +20,10 @@ $jar = (Resolve-Path -LiteralPath $ArtRuntimeJar).Path
 $client = Join-Path $runtime 'StoneClient.exe'; $broker = Join-Path $runtime 'StoneService.exe'
 Copy-Item -LiteralPath $probePath -Destination $client -Force
 Copy-Item -LiteralPath $servicePath -Destination $broker -Force
+Get-ChildItem -LiteralPath (Split-Path $probePath) -Filter '*.dll' -File |
+    Copy-Item -Destination $runtime -Force
 $saved = @{}
-foreach ($name in @('STONE_ART_DATA_DIRECTORY','STONE_PROBE_SERVICE','STONE_ANGLE_DIR')) { $saved[$name] = [Environment]::GetEnvironmentVariable($name) }
+foreach ($name in @('STONE_ART_DATA_DIRECTORY','STONE_PROBE_SERVICE')) { $saved[$name] = [Environment]::GetEnvironmentVariable($name) }
 $script:request = 0; $script:live = $null; $completed = $false
 function Control([string]$Operation) {
     $script:request++; $stdout = Join-Path $output "request-$script:request.stdout.txt"
@@ -61,7 +62,6 @@ function Run-Stage([string]$Stage, [string]$Apk, [string]$Profile) {
 try {
     $passed = Join-Path $output 'passed.txt'; if (Test-Path -LiteralPath $passed) { Remove-Item -LiteralPath $passed -Force }
     $env:STONE_PROBE_SERVICE = $broker
-    if ($AngleDirectory) { $env:STONE_ANGLE_DIR = (Resolve-Path -LiteralPath $AngleDirectory).Path }
     Run-Stage 'fixture' $fixture 'fixture'
     Stop-Broker
     Run-Stage 'recover' $fixture 'fixture'

@@ -1,7 +1,7 @@
 Stone third-party components
 ============================
 
-This file identifies the third-party code retained in this source tree.
+This file identifies third-party code retained in this source tree or acquired during the build.
 The referenced license files and source notices remain authoritative.
 All source-tree paths below are relative to the repository root.
 
@@ -35,10 +35,18 @@ miniz 3.1.2
   Source, hashes and build configuration: oss/miniz/README.stone.md.
   Notice: oss/miniz/LICENSE, distributed as licenses/miniz-MIT.txt.
 
-ANGLE / Khronos headers
-  Purpose: Windows graphics API declarations.
-  Notices: oss/angle/LICENSE and individual header notices in oss/angle/include.
-  ANGLE DLLs are external runtime dependencies and are not bundled here.
+ANGLE runtime / Khronos headers
+  Purpose: Windows EGL/GLES implementation and graphics API declarations.
+  Headers are installed by vcpkg and retain their individual notices.
+  Package copyright files: share/angle/copyright, share/egl-registry/copyright,
+  and share/opengl-registry/copyright under the vcpkg target installation.
+  Runtime source revision, dependency baseline and build options: docs/third-party/angle.md.
+  Runtime DLLs are built from pinned upstream source and distributed beside StoneClient.exe.
+  Runtime license: licenses/angle/LICENSE, copied from vcpkg's share/angle/copyright.
+  Additional package notices: licenses/angle/zlib.txt, egl-registry.txt and opengl-registry.txt.
+  Official vcpkg source provenance: licenses/angle/vcpkg.spdx.json.
+  The SDK D3DCompiler redistributable is included beside the ANGLE DLLs under
+  the Windows SDK license: https://aka.ms/WinSDKLicenseURL.
 
 Vulkan headers
   Purpose: Vulkan bridge API declarations.
@@ -73,7 +81,7 @@ Windows packaging tools and redistributables
   redistributable directory using CMake InstallRequiredSystemLibraries.
   Redistribution is subject to the installed Visual Studio license and REDIST
   terms: https://visualstudio.microsoft.com/license-terms/.
-  Windows JDKs, Android images and ANGLE DLLs are not added by packaging.
+  Windows JDKs and Android images are not added by packaging.
 
 System-image components
   ART, the AOSP Java framework, system fonts, Conscrypt, Android native

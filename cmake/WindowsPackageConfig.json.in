@@ -7,6 +7,8 @@
   "runtimeDirectory": "@stone_platform_bin_json@/$<CONFIG>",
   "outputDirectory": "@package_directory_json@",
   "sourceDirectory": "@PROJECT_SOURCE_DIR_json@",
+  "buildDirectory": "@PROJECT_BINARY_DIR_json@",
+  "cmake": "@CMAKE_COMMAND_json@",
   "settingsProject": "@PROJECT_BINARY_DIR_json@/src/windows/settings/StoneSettings.csproj",
   "msbuild": "@CMAKE_VS_MSBUILD_COMMAND_json@",
   "wix": "@STONE_WIX_EXECUTABLE_json@",

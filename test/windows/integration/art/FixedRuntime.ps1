@@ -42,6 +42,9 @@ function New-StoneTestRuntime([string]$SourceRuntime,[string]$OutputDirectory) {
         foreach ($name in @('StoneService.exe','StoneClient.exe','stone-art-runtime.jar','StoneImageTool.exe')) {
             Copy-StoneTestFile (Join-Path $SourceRuntime $name) (Join-Path $directory $name)
         }
+        foreach ($library in Get-ChildItem -LiteralPath $SourceRuntime -Filter '*.dll' -File) {
+            Copy-StoneTestFile $library.FullName (Join-Path $directory $library.Name)
+        }
         $settings=Join-Path $directory 'settings'; $target=(Resolve-Path -LiteralPath (Join-Path $SourceRuntime 'settings')).Path
         if (Test-Path -LiteralPath $settings) {
             $item=Get-Item -LiteralPath $settings -Force

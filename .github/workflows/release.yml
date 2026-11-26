@@ -26,6 +26,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_NOLOGO: '1'
   NUGET_PACKAGES: ${{ github.workspace }}/build/cache/nuget/
+  VCPKG_ROOT: ${{ github.workspace }}/build/tools/vcpkg
   STONE_ANDROID_PLATFORM: 'android-37.0'
   STONE_ANDROID_BUILD_TOOLS: '36.0.0'
 
@@ -137,6 +138,7 @@ jobs:
               if ($LASTEXITCODE -ne 0 -or !$vs) { throw 'Visual Studio components required by .vsconfig are missing.' }
           }
           "STONE_VS_INSTALLATION=$vs" >> $env:GITHUB_ENV
+          "VCPKG_VISUAL_STUDIO_PATH=$vs" >> $env:GITHUB_ENV
 
       - name: Prepare remaining build dependencies
         env:
@@ -216,6 +218,31 @@ jobs:
           } finally {
               if (Test-Path -LiteralPath $pfx) { Remove-Item -LiteralPath $pfx -Force }
           }
+
+      - name: Read vcpkg baseline and default cache locations
+        id: vcpkg
+        run: |
+          $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+          if ($baseline -notmatch '^[0-9a-f]{40}$') { throw 'Invalid vcpkg baseline.' }
+          "revision=$baseline" >> $env:GITHUB_OUTPUT
+          "downloads=$env:VCPKG_ROOT/downloads" >> $env:GITHUB_OUTPUT
+          "archives=$env:LOCALAPPDATA/vcpkg/archives" >> $env:GITHUB_OUTPUT
+
+      - name: Provide external vcpkg checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: microsoft/vcpkg
+          ref: ${{ steps.vcpkg.outputs.revision }}
+          path: build/tools/vcpkg
+          persist-credentials: false
+
+      - name: Cache vcpkg downloads and binary packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ steps.vcpkg.outputs.downloads }}
+            ${{ steps.vcpkg.outputs.archives }}
+          key: windows-2025-vs2026-vcpkg-v3-${{ hashFiles('vcpkg.json', 'dep/vcpkg-overlay-ports/**', 'dep/vcpkg-overlay-triplets/**') }}
 
       - name: Build Release MSI and MSIX packages
         run: |

@@ -66,7 +66,7 @@ add_executable(stone-core-tests
 target_link_libraries(stone-core-tests PRIVATE stone-host iphlpapi mmdevapi)
 target_include_directories(stone-core-tests PRIVATE "${STONE_WINDOWS_TEST_SOURCE_DIR}")
 set_target_properties(stone-core-tests PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${STONE_TEST_ROOT}/subsystem/$<CONFIG>")
+    RUNTIME_OUTPUT_DIRECTORY "${STONE_TEST_ROOT}/subsystem/core/$<CONFIG>" FOLDER "Tests/Subsystem")
 add_dependencies(stone-core-tests stone-image-tools stone-image-classpath-tests)
 
 # These probes link only Stone's native host and ART backend. They neither build
@@ -84,6 +84,12 @@ add_dependencies(stone-art-test-support StoneService)
 set_target_properties(stone-art-test-support PROPERTIES FOLDER "Tests/Subsystem")
 
 add_executable(stone-art-probe runtime/art/entry.cpp)
+add_custom_target(stone-art-test-runtime
+    COMMAND "${CMAKE_COMMAND}" --install "${PROJECT_BINARY_DIR}" --config "$<CONFIG>"
+        --prefix "$<TARGET_FILE_DIR:stone-art-probe>" --component stone-graphics
+    COMMENT "Installing graphics runtime for ART tests" USES_TERMINAL VERBATIM)
+set_target_properties(stone-art-test-runtime PROPERTIES FOLDER "Tests/Subsystem")
+add_dependencies(stone-art-probe stone-art-test-runtime)
 foreach(target stone-art-probe)
     target_compile_options(${target} PRIVATE /utf-8)
     target_link_libraries(${target} PRIVATE stone-art-test-support stone-host)
@@ -112,12 +118,9 @@ option(STONE_CORE_ART_WINDOW "Present the ART Activity dashboard in a real Stone
 if(STONE_CORE_ART_WINDOW AND NOT STONE_CORE_ART_APPLICATION)
     message(FATAL_ERROR "The ART window check requires STONE_CORE_ART_APPLICATION=ON.")
 endif()
-set(STONE_CORE_ART_ANGLE_DIRECTORY "" CACHE PATH "Real ANGLE DLL directory for the optional ART graphics probe")
 if((STONE_CORE_ART_GRAPHICS OR STONE_CORE_ART_RESOURCES OR STONE_CORE_ART_APPLICATION) AND
-        (NOT STONE_CORE_ART_DIRECTORY OR NOT STONE_CORE_ART_DEX OR NOT STONE_CORE_ART_CIT_APK
-        OR NOT EXISTS "${STONE_CORE_ART_ANGLE_DIRECTORY}/libEGL.dll"
-        OR NOT EXISTS "${STONE_CORE_ART_ANGLE_DIRECTORY}/libGLESv2.dll"))
-    message(FATAL_ERROR "ART graphics/resources/application require prepared ART, probe DEX, CIT APK and real ANGLE DLL paths.")
+        (NOT STONE_CORE_ART_DIRECTORY OR NOT STONE_CORE_ART_DEX OR NOT STONE_CORE_ART_CIT_APK))
+    message(FATAL_ERROR "ART graphics/resources/application require prepared ART, probe DEX and CIT APK paths.")
 endif()
 add_executable(stone-sqlite-wal-tests hle/system/sqlite-wal-tests.cpp support/test-require.cpp)
 target_link_libraries(stone-sqlite-wal-tests PRIVATE stone-host)
@@ -144,14 +147,12 @@ if(STONE_CORE_ART_DIRECTORY AND STONE_CORE_ART_DEX)
         if(STONE_CORE_ART_GRAPHICS)
             add_test(NAME stone-art-graphics COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}" --graphics)
-            set_tests_properties(stone-art-graphics PROPERTIES LABELS "core;art;graphics" TIMEOUT 120
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY}")
+            set_tests_properties(stone-art-graphics PROPERTIES LABELS "core;art;graphics" TIMEOUT 120)
         endif()
         if(STONE_CORE_ART_RESOURCES)
             add_test(NAME stone-art-resources COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}" --resources)
-            set_tests_properties(stone-art-resources PROPERTIES LABELS "core;art;resources" TIMEOUT 120
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY}")
+            set_tests_properties(stone-art-resources PROPERTIES LABELS "core;art;resources" TIMEOUT 120)
         endif()
         if(STONE_CORE_ART_APPLICATION)
             add_dependencies(stone-art-probe stone-art-runtime)
@@ -159,70 +160,67 @@ if(STONE_CORE_ART_DIRECTORY AND STONE_CORE_ART_DEX)
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --battery "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
             set_tests_properties(stone-art-battery PROPERTIES LABELS "core;art;application;battery" TIMEOUT 180
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-battery-cit")
+                ENVIRONMENT "STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-battery-cit")
             if(STONE_CORE_ART_JOB_FIXTURE)
                 add_test(NAME stone-art-jobs COMMAND powershell.exe -NoProfile -File
                     "${STONE_WINDOWS_TEST_SOURCE_DIR}/integration/art/RunJobs.ps1" -Probe "$<TARGET_FILE:stone-art-probe>"
                     -Service "$<TARGET_FILE:StoneService>" -PreparedSystem "${STONE_CORE_ART_DIRECTORY}"
                     -ProbeDex "${STONE_CORE_ART_DEX}" -FixtureApk "${STONE_CORE_ART_JOB_FIXTURE}"
                     -ArtRuntimeJar "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar"
-                    -AngleDirectory "${STONE_CORE_ART_ANGLE_DIRECTORY}"
                     -OutputDirectory "${STONE_TEST_ROOT}/art-jobs-$<CONFIG>")
                 set_tests_properties(stone-art-jobs PROPERTIES LABELS "core;art;application;jobs" TIMEOUT 300)
             endif()
             add_test(NAME stone-art-application COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
-            set_tests_properties(stone-art-application PROPERTIES LABELS "core;art;application" TIMEOUT 180
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY}")
+            set_tests_properties(stone-art-application PROPERTIES LABELS "core;art;application" TIMEOUT 180)
             add_test(NAME stone-art-startup-natives COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --startup-natives "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
-            set_tests_properties(stone-art-startup-natives PROPERTIES LABELS "core;art;application;startup" TIMEOUT 60
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY}")
+            set_tests_properties(stone-art-startup-natives PROPERTIES LABELS "core;art;application;startup" TIMEOUT 60)
             add_test(NAME stone-art-video-codecs COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --video-codecs "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
             set_tests_properties(stone-art-video-codecs PROPERTIES LABELS "core;art;application;media" TIMEOUT 90
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-video-codecs")
+                ENVIRONMENT "STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-video-codecs")
             add_test(NAME stone-art-resize-window COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --resize-window "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
             set_tests_properties(stone-art-resize-window PROPERTIES LABELS "core;art;application;graphics" TIMEOUT 120
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-resize-window")
+                ENVIRONMENT "STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-resize-window")
             add_test(NAME stone-art-filesystem COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
             set_tests_properties(stone-art-filesystem PROPERTIES LABELS "core;art;filesystem" TIMEOUT 180
-                ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_PROBE_ONLY_FILESYSTEM=1")
+                ENVIRONMENT "STONE_ART_PROBE_ONLY_FILESYSTEM=1")
             if(STONE_CORE_ART_ARCHIVES)
                 add_test(NAME stone-art-packages COMMAND stone-art-probe
                     "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_ARCHIVES}/launch.apk"
                     --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
                 set_tests_properties(stone-art-packages PROPERTIES LABELS "core;art;application;packages" TIMEOUT 180
-                    ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES};STONE_ART_PROBE_ONLY_PACKAGES=1;STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-packages")
+                    ENVIRONMENT "STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES};STONE_ART_PROBE_ONLY_PACKAGES=1;STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-packages")
                 add_test(NAME stone-art-archives COMMAND stone-art-probe
                     "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_ARCHIVES}/launch.apk"
                     --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
                 set_tests_properties(stone-art-archives PROPERTIES LABELS "core;art;application;archives" TIMEOUT 180
-                    ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES}")
+                    ENVIRONMENT "STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES}")
                 add_test(NAME stone-art-uninstall COMMAND stone-art-probe
                     "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_ARCHIVES}/launch.apk"
                     --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
                 set_tests_properties(stone-art-uninstall PROPERTIES LABELS "core;art;application;uninstall" TIMEOUT 180
-                    ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES};STONE_ART_PROBE_ONLY_UNINSTALL=1")
+                    ENVIRONMENT "STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES};STONE_ART_PROBE_ONLY_UNINSTALL=1")
                 add_test(NAME stone-art-launchers COMMAND stone-art-probe
                     "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_ARCHIVES}/launch.apk"
                     --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
                 set_tests_properties(stone-art-launchers PROPERTIES LABELS "core;art;application;launchers" TIMEOUT 180
-                    ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES};STONE_ART_PROBE_ONLY_LAUNCHERS=1")
+                    ENVIRONMENT "STONE_ART_PROBE_ARCHIVES=${STONE_CORE_ART_ARCHIVES};STONE_ART_PROBE_ONLY_LAUNCHERS=1")
             endif()
             if(STONE_CORE_ART_WINDOW)
                 add_test(NAME stone-art-window COMMAND stone-art-probe
                     "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                     --application "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
                 set_tests_properties(stone-art-window PROPERTIES LABELS "core;art;application;window" TIMEOUT 180
-                    ENVIRONMENT "STONE_ANGLE_DIR=${STONE_CORE_ART_ANGLE_DIRECTORY};STONE_ART_PROBE_WINDOW=1")
+                    ENVIRONMENT "STONE_ART_PROBE_WINDOW=1")
             endif()
         endif()
     endif()
@@ -241,9 +239,12 @@ set_target_properties(stone-test-egl stone-test-gles PROPERTIES
 set_target_properties(stone-test-egl PROPERTIES OUTPUT_NAME libEGL)
 set_target_properties(stone-test-gles PROPERTIES OUTPUT_NAME libGLESv2)
 add_dependencies(stone-core-tests stone-test-egl stone-test-gles)
+add_custom_command(TARGET stone-core-tests POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:stone-test-egl>"
+        "$<TARGET_FILE:stone-test-gles>" "$<TARGET_FILE_DIR:stone-core-tests>"
+    VERBATIM)
 
 set(test_environment
-    "STONE_ANGLE_DIR=$<TARGET_FILE_DIR:stone-test-egl>"
     "STONE_IMAGE_TOOLS=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/StoneImageTool.exe"
 )
 
