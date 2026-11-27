@@ -69,7 +69,7 @@ int wmain(int argc, wchar_t* argv[])
             << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --audio-codecs <stone-art-runtime.jar>\n";
         std::wcout << L"       stone-art-probe --capture-audio <pid> <output.wav> <milliseconds>\n";
         std::wcout
-            << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --storage <stone-art-runtime.jar> <write|read>\n";
+            << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --storage <stone-art-runtime.jar> <write|read|private-write|private-read>\n";
         std::wcout
             << L"       stone-art-probe <prepared-system-directory> <probe.dex> <sample.apk> --service <stone-art-runtime.jar> <service-class>\n";
         std::wcout

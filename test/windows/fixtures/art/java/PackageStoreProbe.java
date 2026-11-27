@@ -33,9 +33,21 @@ final class PackageStoreProbe {
     }
 
     static void run(ArtApplication running) throws Exception {
+        PackageManager manager = running.context.getPackageManager();
+        String current = running.context.getPackageName();
+        if (!java.util.Objects.equals(manager.getInstallerPackageName(current),
+                manager.getInstallSourceInfo(current).getInstallingPackageName()))
+            throw new AssertionError("legacy and current install-source queries disagree");
+        unknownInstaller(manager, "com.trebledot.stone.probe.missing");
+        unknownInstaller(manager, "../invalid-package");
         String root = System.getProperty("stone.probe.archives");
         if (root == null) return;
         new PackageStoreProbe(running, new File(root)).verify(running);
+    }
+
+    private static void unknownInstaller(PackageManager manager, String name) {
+        try { manager.getInstallerPackageName(name); throw new AssertionError("unknown installer query accepted: " + name); }
+        catch (IllegalArgumentException expected) { }
     }
 
     private Object call(String name, Class<?>[] parameters, Object... arguments) throws Exception {
@@ -75,6 +87,17 @@ final class PackageStoreProbe {
     }
 
     private void verify(ArtApplication running) throws Exception {
+        remove(OTHER);
+        install("other-package");
+        PackageManager sourceManager = context.getPackageManager();
+        if (!context.getPackageName().equals(sourceManager.getInstallerPackageName(OTHER))
+                || !sourceManager.getInstallerPackageName(OTHER).equals(
+                    sourceManager.getInstallSourceInfo(OTHER).getInstallingPackageName()))
+            throw new AssertionError("registered package installer queries disagree");
+        remove(OTHER);
+        unknownInstaller(sourceManager, OTHER);
+        System.out.println("PASS registered installer queries and removed-package rejection.");
+        if (Boolean.getBoolean("stone.probe.only-install-sources")) return;
         verifyOpenFileRemoval();
         File marker = new File(context.getFilesDir(), "package-store-recovery.properties");
         if (marker.isFile()) {
@@ -102,6 +125,7 @@ final class PackageStoreProbe {
                 || !new File(visible.applicationInfo.sourceDir).isFile()
                 || manager.getInstalledPackages(FLAGS).stream().noneMatch(info -> PACKAGE.equals(info.packageName))
                 || !context.getPackageName().equals(manager.getInstallSourceInfo(PACKAGE).getInstallingPackageName())
+                || !context.getPackageName().equals(manager.getInstallerPackageName(PACKAGE))
                 || manager.getApplicationInfo(PACKAGE, 0).uid != first.applicationInfo.uid
                 || !java.util.Arrays.asList(manager.getPackagesForUid(first.applicationInfo.uid)).contains(PACKAGE))
             throw new AssertionError("installed package public metadata");
@@ -126,6 +150,7 @@ final class PackageStoreProbe {
         }
         verifyFailedPublication();
         remove(PACKAGE);
+        unknownInstaller(manager, PACKAGE);
         if (manager.getPackagesForUid(first.applicationInfo.uid) != null) throw new AssertionError("removed UID remained cached");
         install("v2");
         reject("rotated-no-data");

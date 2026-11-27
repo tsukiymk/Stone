@@ -4,6 +4,8 @@ The system image provides Android resources read-only. Application code, private
 
 ## Shared volumes and application directories
 
+Before Application and provider initialization, Stone creates the private data root and its `device-protected` subdirectory. Device-protected contexts use that separate directory for preferences, files, and caches across launches. Both roots use the Windows file backend; this does not implement Android credential encryption or a locked-device boot phase. If either root cannot be created, launch fails with an explicit storage error.
+
 The primary volume's Android path is `/storage/emulated/0`, backed by `<data-dir>/storage/emulated/0` on the host. `/sdcard`, `/storage/self/primary`, and `/data/media/0` refer to the same volume.
 
 When initializing shared storage for an existing data root, Stone checks `<data-dir>/sdcard`, then `<data-dir>/data/media/0`, and moves the first existing directory to the primary volume path if that destination does not exist. An existing destination is neither overwritten nor merged with old data.

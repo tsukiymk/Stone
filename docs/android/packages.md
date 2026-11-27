@@ -22,6 +22,8 @@ The image verifier checks complete APK contents and supported v1/v2/v3 signature
 
 Package code is published to `/data/app/stone/<uuid>/base.apk`, with the index under `/data/system/stone-packages/`. Cross-process file locks serialize commits. Atomic indexes and commit receipts support fault recovery. Updates preserve UID, first installation time, and private data. Query results do not share mutable cached objects.
 
+Both `getInstallerPackageName` and `getInstallSourceInfo` read the current install-source registry. For a known package without a recorded installer, including an unregistered APK launched directly, the installer name is `null`. `getInstallerPackageName` throws `IllegalArgumentException` when the queried package is neither registered nor the current application.
+
 ## Updates without confirmation and ownership
 
 `USER_ACTION_NOT_REQUIRED` requests installation without confirmation, but still requires actual manifest permissions, the platform's minimum target API level, and existing install-source/update-ownership rules. Signature conflicts, downgrades, mandatory confirmation, or insufficient eligibility still fail or require confirmation.

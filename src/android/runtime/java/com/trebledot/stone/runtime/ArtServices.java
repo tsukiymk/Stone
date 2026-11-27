@@ -334,6 +334,11 @@ final class ArtServices {
                 case "getPermissionControllerPackageName": return apk.applicationInfo.packageName;
                 case "canRequestPackageInstalls": return apk.applicationInfo.packageName.equals(arguments[0])
                     && (Integer) arguments[1] == localUser && packageInstaller.canRequestInstalls();
+                case "getInstallerPackageName": {
+                    String[] source = packages.installSource((String) arguments[0]);
+                    if (source == null) throw new IllegalArgumentException("Unknown package: " + arguments[0]);
+                    return source[0];
+                }
                 case "getInstallSourceInfo": {
                     if ((Integer) arguments[1] != localUser) return null;
                     String[] source = packages.installSource((String) arguments[0]);

@@ -72,6 +72,11 @@ public final class Application {
             if (Boolean.getBoolean("stone.probe.only-packages")) {
                 if (System.getProperty("stone.probe.archives") == null)
                     throw new AssertionError("Package-only probe requires signed archive fixtures");
+                if (Boolean.getBoolean("stone.probe.only-install-sources")) {
+                    PackageStoreProbe.run(running);
+                    System.out.println("PASS install-source-only query checks.");
+                    return 42;
+                }
                 ArchiveProbe.run(running.context);
                 PackageStoreProbe.run(running);
                 System.out.println("PASS package-only signature, compatibility and publication checks.");
