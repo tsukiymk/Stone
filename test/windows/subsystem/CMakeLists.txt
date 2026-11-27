@@ -274,6 +274,11 @@ foreach(group hle allocation local-listener-probe inotify-storage external-local
     set_tests_properties(stone-core-${group} PROPERTIES LABELS "core;native-layers;unit" TIMEOUT 60)
 endforeach()
 
+foreach(first environ getenv arm64)
+    add_test(NAME stone-core-environment-${first} COMMAND stone-core-tests environment ${first})
+    set_tests_properties(stone-core-environment-${first} PROPERTIES LABELS "core;libc;unit" TIMEOUT 30)
+endforeach()
+
 add_test(NAME stone-core-arm64-instructions COMMAND stone-core-tests arm64)
 set_tests_properties(stone-core-arm64-instructions PROPERTIES LABELS "core;arm64" TIMEOUT 60)
 

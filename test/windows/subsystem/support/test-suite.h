@@ -79,6 +79,7 @@ void TestAndroid(Suite& suite, int api);
 void TestGraphics(Suite& suite);
 void TestLogAndMath(Suite& suite);
 void TestLibc(Suite& suite, int api);
+void TestLibcEnvironment(Suite& suite, std::wstring_view first);
 void TestAllocations(Suite& suite);
 int ProbeLocalListener(const wchar_t* peerName = nullptr);
 void TestArm64DataCache(Suite& suite);

@@ -54,6 +54,8 @@ Faults/abort, startup failures, external forced termination, and other abnormal 
 
 ART, the framework, and directly usable Android native libraries come from the selected image. Host bridges provide Windows file, thread, networking, signal, handle, window, and device semantics. Matching export names do not justify replacing or removing a bridge: symbol selection must preserve loading scope, ABI, ownership, and the actual calling convention.
 
+The libc bridge initializes the host's narrow environment before exposing it to image code. Native x64 `environ`, `getenv`, `setenv`, and `unsetenv` share the CRT's live storage; ARM64 receives a guest-owned environment snapshot.
+
 NDK Bitmap uses image libjnigraphics.so; assets and configuration use image libandroid.so. Stone's software image queues, NativeWindow, and HardwareBuffer cannot be mixed with image-native handles. Unconnected Java Surface/HardwareBuffer conversions fail explicitly.
 
 Windows x64 thread-state recovery accepts only registered FS/GS recovery points and preserves registers, flags, return PC, and code lifetime. ART scanning and the signal layer jointly maintain the boundaries between image code, dynamic JIT code, and fault mappings.
