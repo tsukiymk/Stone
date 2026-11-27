@@ -20,6 +20,16 @@ Supported formats include ext4 and the EROFS layouts used by the corresponding A
 
 The system image is a read-only resource source, while application data uses separate writable mounts. Cold preparation and execution require no Windows JDK/JVM or installed .NET runtime. On-demand access to all resources in a complete image is not fully connected. Fonts and Canvas use image resources and libhwui.
 
+### WebView image resources
+
+Image preparation examines the immediate package subdirectories under `app` and `priv-app`. It selects directories whose names contain `webview` or `trichrome` (case insensitive) and copies regular files ending in `.apk` directly inside them. Other application APKs and providers stored under different directory names are not copied.
+
+It reads `system`, `product`, and `system_ext` partitions from GPT/super images, including `_a` slots and sparse containers. For `product` and `system_ext`, each partition is resolved independently: a separate partition takes precedence; if it is absent, the corresponding directory embedded in the system filesystem is used instead. A separate partition and its embedded counterpart are not merged.
+
+Copied APKs retain their original bytes and guest paths. The sorted candidate paths are published in `/system/etc/stone-webview-apks.list` after all copies succeed. Successful preparation without candidates produces an empty list.
+
+This resource list does not register a provider or establish WebView availability. The runtime WebView update service, provider loading, and rendering flow remain incomplete. Some Google Play images contain only small `WebViewGoogle-Stub` and `TrichromeLibrary-Stub` APKs; copying those packages does not supply the WebView engine. Provider manifest/signature validation and a complete engine are still required.
+
 ## Execution and compilation
 
 For x86_64 images, Java JIT is not proactively enabled by default; explicit `--enable-jit` enables it for one launch. ARM64 images enable Java JIT automatically. The interpreter path defaults to warmup=100 and optimization=1000; the experimental native block path uses 1000/10000. Explicit parameters take precedence.

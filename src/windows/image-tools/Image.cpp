@@ -183,7 +183,7 @@ bool Super(const Image& image)
            (U32(image.Read(4096, 4), 0) == 0x616c4467 || U32(image.Read(8192, 4), 0) == 0x616c4467);
 }
 
-std::optional<Image> Metadata(const Image& image, int64_t offset, int capacity)
+std::optional<Image> Metadata(const Image& image, int64_t offset, int capacity, std::string_view requested)
 {
     auto header = image.Read(offset, 128);
     Require(U32(header, 0) == 0x414c5030 && U16(header, 4) == 10 && U16(header, 6) <= 2, "Unsupported super metadata");
@@ -205,11 +205,11 @@ std::optional<Image> Metadata(const Image& image, int64_t offset, int capacity)
         name.resize(name.find('\0') == std::string::npos ? 36 : name.find('\0'));
         if ((I32(tables, row + 36) & 8) || !I32(tables, row + 44))
             continue;
-        if (name == "system") {
+        if (name == requested) {
             partition = row;
             break;
         }
-        if (name == "system_a")
+        if (name == std::string(requested) + "_a")
             partition = row;
     }
     if (partition < 0)
@@ -231,7 +231,7 @@ std::optional<Image> Metadata(const Image& image, int64_t offset, int capacity)
     return ranges.View();
 }
 
-std::optional<Image> Logical(const Image& image)
+std::optional<Image> Logical(const Image& image, std::string_view name)
 {
     auto geometry = image.Read(4096, 52);
     if (U32(geometry, 0) != 0x616c4467)
@@ -239,11 +239,11 @@ std::optional<Image> Logical(const Image& image)
     int capacity = I32(geometry, 40), slots = I32(geometry, 44);
     Require(capacity >= 128 && capacity <= 4 * 1024 * 1024 && slots > 0 && slots <= 3, "Invalid super geometry");
     try {
-        if (auto result = Metadata(image, 12288, capacity))
+        if (auto result = Metadata(image, 12288, capacity, name))
             return result;
     }
     catch (const std::runtime_error&) {
-        return Metadata(image, 12288 + int64_t(capacity) * slots, capacity);
+        return Metadata(image, 12288 + int64_t(capacity) * slots, capacity, name);
     }
     return {};
 }
@@ -291,8 +291,10 @@ Image Unsparse(const Image& image)
 }
 }
 
-Image OpenSystem(Image image)
+std::optional<Image> OpenImagePartition(Image image, std::string_view name)
 {
+    Require(name == "system" || name == "product" || name == "system_ext", "Unsupported image partition name");
+    const auto requested = Path(name).wstring(), slotted = requested + L"_a";
     if (U32(image.Read(0, 4), 0) == 0xed26ff3a)
         image = Unsparse(image);
     if (image.size >= 1024) {
@@ -310,18 +312,16 @@ Image OpenSystem(Image image)
                 std::wstring label(36, 0);
                 std::memcpy(label.data(), row.data() + 56, 72);
                 label.resize(label.find(L'\0') == std::wstring::npos ? 36 : label.find(L'\0'));
-                if (label != L"system" && label != L"super" && label != L"system_a")
+                if (label != requested && label != L"super" && label != slotted)
                     continue;
                 int64_t first = Sectors(I64(row, 32)), last = Sectors(I64(row, 40));
                 Require(last >= first, "Invalid GPT partition bounds");
                 image.Range(last, 512);
                 Image part = image.Slice(first, last - first + 512);
-                if (label == L"system") {
+                if (label == requested) {
                     if (!Super(part))
                         return part;
-                    auto found = Logical(part);
-                    Require(found.has_value(), "No logical system partition");
-                    return *found;
+                    return Logical(part, name);
                 }
                 if (label == L"super")
                     super = part;
@@ -329,17 +329,25 @@ Image OpenSystem(Image image)
                     slot = part;
             }
             if (super)
-                if (auto found = Logical(*super))
+                if (auto found = Logical(*super, name))
                     return *found;
-            Require(slot.has_value(), "Android image has no system partition");
+            if (!slot)
+                return {};
             image = *slot;
+            if (!Super(image))
+                return image;
         }
     }
     if (!Super(image))
-        return image;
-    auto found = Logical(image);
-    Require(found.has_value(), "Android image has no logical system partition");
-    return *found;
+        return name == "system" ? std::optional(image) : std::nullopt;
+    return Logical(image, name);
+}
+
+Image OpenSystem(Image image)
+{
+    auto system = OpenImagePartition(std::move(image), "system");
+    Require(system.has_value(), "Android image has no system partition");
+    return *system;
 }
 
 std::vector<std::string> Partition::Files(const std::string& directory) const

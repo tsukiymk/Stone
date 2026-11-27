@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <optional>
 #include <set>
 #include <span>
 #include <stdexcept>
@@ -90,6 +91,7 @@ public:
 
 Image OpenFile(const fs::path& path);
 Image OpenSystem(Image image);
+std::optional<Image> OpenImagePartition(Image image, std::string_view name);
 
 struct Entry {
     std::string name;

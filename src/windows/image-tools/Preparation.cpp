@@ -220,11 +220,60 @@ std::string Trim(std::string value)
 }
 
 class Preparation {
+    Image image_;
     std::shared_ptr<Partition> system_;
     fs::path cache_, output_;
     std::map<std::string, std::shared_ptr<Partition>> payloads_;
     std::vector<std::shared_ptr<Partition>> apices_;
     std::shared_ptr<Partition> runtime_;
+
+    void WebViewPackages()
+    {
+        std::vector<std::string> apks;
+        std::set<std::wstring> destinations;
+        auto collect = [&](const Partition& partition, const std::string& source, const std::string& mount) {
+            for (const auto* parent : {"app", "priv-app"}) {
+                auto directory = source.empty() ? std::string(parent) : source + "/" + parent;
+                for (const auto& entry : partition.List(directory)) {
+                    if (entry.type != Partition::Directory)
+                        continue;
+                    auto lower = entry.name;
+                    for (auto& c : lower)
+                        if (c >= 'A' && c <= 'Z')
+                            c += 'a' - 'A';
+                    if (lower.find("webview") == lower.npos && lower.find("trichrome") == lower.npos)
+                        continue;
+                    Require(SafeName(entry.name), "Invalid WebView package directory");
+                    auto packageDirectory = directory + "/" + entry.name;
+                    auto target = mount + "/" + parent + "/" + entry.name;
+                    for (const auto& name : partition.Files(packageDirectory)) {
+                        if (!name.ends_with(".apk"))
+                            continue;
+                        auto destination = Destination(output_ / Path(target), name);
+                        auto folded = destination.wstring();
+                        CharUpperBuffW(folded.data(), static_cast<DWORD>(folded.size()));
+                        Require(destinations.insert(folded).second, "Colliding WebView APK path");
+                        Copy(partition, packageDirectory, name, destination);
+                        apks.push_back("/" + target + "/" + name);
+                    }
+                }
+            }
+        };
+        collect(*system_, "", "system");
+        for (const auto* name : {"product", "system_ext"}) {
+            if (auto image = OpenImagePartition(image_, name))
+                collect(*OpenPartition(*image), "", name);
+            else
+                collect(*system_, name, name);
+        }
+        std::sort(apks.begin(), apks.end());
+        // Publish only after all APK copies succeed. Runtime provider selection
+        // must still parse and validate the original manifests and signatures.
+        Atomic(output_ / L"system/etc/stone-webview-apks.list", [&](auto& output) {
+            for (const auto& apk : apks)
+                output << apk << '\n';
+        });
+    }
 
     std::shared_ptr<Partition> Payload(const std::string& module)
     {
@@ -280,7 +329,7 @@ class Preparation {
 
 public:
     Preparation(const fs::path& image, fs::path cache)
-        : system_(OpenPartition(OpenSystem(OpenFile(image)))), cache_(std::move(cache)),
+        : image_(OpenFile(image)), system_(OpenPartition(OpenSystem(image_))), cache_(std::move(cache)),
           output_(cache_ / L"art-runtime")
     {
     }
@@ -412,6 +461,7 @@ public:
             for (const auto& dependency : ElfDependencies(*library))
                 pending.push_back(dependency);
         }
+        WebViewPackages();
         return output_;
     }
 };
