@@ -1,5 +1,25 @@
 {
   "system": {
+    "libc.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Official AOSP API 37.0 default x86_64 revision 6 system image (x86_64-37.0_r06.zip), /apex/com.android.runtime/lib64/bionic/libc.so; Windows Bionic bridge",
+        "sha256": "5f6411b3593f045c008b4003d824a5fbde289d7c4f58bc6fa9836b3ea3f92f79",
+        "compatibility": null
+      }
+    ],
+    "libEGL.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Official AOSP API 37.0 default x86_64 revision 6 system image (x86_64-37.0_r06.zip), /system/lib64/libEGL.so; Windows ANGLE bridge",
+        "sha256": "81ea36d282eb5252ed67536ad6fc289e43cb4f25b83e0e7cc77306261a64565f",
+        "compatibility": null
+      }
+    ],
     "libmedia_jni.so": [
       {
         "abi": "x86_64",
@@ -489,6 +509,15 @@
       }
     ],
     "libwebviewchromium.so": [
+      {
+        "packageName": "com.android.webview",
+        "abi": "x86_64",
+        "version": "145.0.7632.218",
+        "versionSource": "apk-version-name",
+        "source": "Official AOSP API 37.0 default x86_64 revision 6 system image (x86_64-37.0_r06.zip), /product/app/webview/webview.apk, lib/x86_64/libwebviewchromium.so",
+        "sha256": "b071b29e09de09011817c3f1a47ad9d6f2026be6a7407cf083a64c57ebdfa4ec",
+        "compatibility": null
+      },
       {
         "packageName": "com.google.android.webview",
         "abi": "x86_64",

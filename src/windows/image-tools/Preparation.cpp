@@ -231,6 +231,45 @@ class Preparation {
     {
         std::vector<std::string> apks;
         std::set<std::wstring> destinations;
+        const auto guestPath = [](const fs::path& path) {
+            const auto text = path.generic_u8string();
+            return std::string(reinterpret_cast<const char*>(text.data()), text.size());
+        };
+        auto nativeFile = [&](std::string guest, const fs::path& target) {
+            std::set<std::string> visited;
+            for (;;) {
+                guest = guestPath(Path(guest).lexically_normal());
+                Require(visited.size() < 32 && visited.insert(guest).second, "Cyclic WebView native library link");
+                std::shared_ptr<Partition> partition;
+                std::string relative;
+                for (const auto* mount : {"system", "product", "system_ext"}) {
+                    const auto prefix = std::string("/") + mount + "/";
+                    if (!guest.starts_with(prefix))
+                        continue;
+                    relative = guest.substr(prefix.size());
+                    if (std::string_view(mount) == "system")
+                        partition = system_;
+                    else if (auto image = OpenImagePartition(image_, mount))
+                        partition = OpenPartition(*image);
+                    else {
+                        partition = system_;
+                        relative = std::string(mount) + "/" + relative;
+                    }
+                    break;
+                }
+                Require(bool(partition), "WebView native library link leaves image partitions");
+                const auto path = Path(relative);
+                for (const auto& component : path)
+                    Require(SafeName(Utf8(component)), "Invalid WebView native library path");
+                const auto parent = guestPath(path.parent_path()), name = Utf8(path.filename());
+                const auto link = partition->Link(parent, name);
+                if (link.empty()) {
+                    Copy(*partition, parent, name, target);
+                    break;
+                }
+                guest = link.starts_with('/') ? link : guestPath(Path(guest).parent_path() / Path(link));
+            }
+        };
         auto collect = [&](const Partition& partition, const std::string& source, const std::string& mount) {
             for (const auto* parent : {"app", "priv-app"}) {
                 auto directory = source.empty() ? std::string(parent) : source + "/" + parent;
@@ -255,6 +294,24 @@ class Preparation {
                         Require(destinations.insert(folded).second, "Colliding WebView APK path");
                         Copy(partition, packageDirectory, name, destination);
                         apks.push_back("/" + target + "/" + name);
+                    }
+                    size_t count = 0;
+                    for (const auto& architecture : partition.List(packageDirectory + "/lib")) {
+                        if (architecture.type != Partition::Directory)
+                            continue;
+                        Require(SafeName(architecture.name), "Invalid WebView native architecture");
+                        const auto suffix = "/lib/" + architecture.name;
+                        for (const auto& file : partition.List(packageDirectory + suffix)) {
+                            if (!file.name.ends_with(".so") ||
+                                (file.type != Partition::Regular && file.type != Partition::Symlink))
+                                continue;
+                            Require(++count <= 128, "Too many WebView native libraries");
+                            auto destination = Destination(output_ / Path(target + suffix), file.name);
+                            auto folded = destination.wstring();
+                            CharUpperBuffW(folded.data(), static_cast<DWORD>(folded.size()));
+                            Require(destinations.insert(folded).second, "Colliding WebView native library path");
+                            nativeFile("/" + target + suffix + "/" + file.name, destination);
+                        }
                     }
                 }
             }
@@ -437,6 +494,8 @@ public:
         });
         std::set<std::string> roots{"libart.so",     "libartpalette-system.so", "libjavacore.so",    "libopenjdkjvm.so",
                                     "libopenjdk.so", "libjavacrypto.so",        "libjnigraphics.so", "libandroid.so"};
+        if (Library("libwebviewchromium_plat_support.so"))
+            roots.insert("libwebviewchromium_plat_support.so");
         roots.insert(extras.begin(), extras.end());
         std::deque<std::string> pending(roots.begin(), roots.end());
         for (const auto& name : ElfDependencies(compiler))

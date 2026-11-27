@@ -24,6 +24,8 @@ void TestArtResizeWindowSample(const std::filesystem::path&, const std::filesyst
                                const std::filesystem::path&);
 void TestArtNativeLibrariesSample(const std::filesystem::path& directory, const std::filesystem::path& dex,
                                   const std::filesystem::path& apk, const std::filesystem::path& artHost);
+void TestArtWebViewProviderSample(const std::filesystem::path&, const std::filesystem::path&,
+                                  const std::filesystem::path&, const std::filesystem::path&);
 void TestArtJobSample(const std::filesystem::path& directory, const std::filesystem::path& dex,
                       const std::filesystem::path& apk, const std::filesystem::path& artHost, std::wstring_view stage);
 void TestArtBatterySample(const std::filesystem::path& directory, const std::filesystem::path& dex,

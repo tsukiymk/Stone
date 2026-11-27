@@ -4,6 +4,8 @@ Android networking combines image Java/native APIs with Stone's Windows socket b
 
 ## Connectivity and network capabilities
 
+The running application's declared `INTERNET` and `ACCESS_NETWORK_STATE` normal permissions are granted by UID and package permission queries. Undeclared permissions, foreign identities, and other users/devices are denied. Package permission flags reflect these grants. This keeps WebView's network-load setting consistent with the application's manifest.
+
 Stone provides a host-managed virtual default network, reporting connectivity, Internet access, and metered state from snapshots. Android matches the image NetworkRequest's implicit constraints and filters. Default and filtered requests maintain separate callbacks; constraints are not ignored to report success.
 
 Windows WLAN, IPv4 configuration, interface names/indexes, IPv4/IPv6 addresses, prefixes, scope, and MTU come from actual host information. Native getifaddrs, read-only ioctl, and image Java NetworkInterface use consistent snapshots. Unrepresentable values return explicit errors. Unavailable sampling is not presented as an empty list.

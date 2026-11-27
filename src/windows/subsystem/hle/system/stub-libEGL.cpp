@@ -502,48 +502,29 @@ uintptr_t Libegl(std::string_view name, bool hostAbi)
                 });
             }
         });
-    constexpr std::string_view regular[]{"eglBindTexImage",
-                                         "eglClientWaitSync",
-                                         "eglCreateImage",
-                                         "eglCreatePbufferFromClientBuffer",
-                                         "eglCreateSync",
-                                         "eglDestroyImage",
-                                         "eglDestroySync",
-                                         "eglGetConfigs",
-                                         "eglGetSyncAttrib",
-                                         "eglQueryAPI",
-                                         "eglReleaseTexImage",
-                                         "eglWaitClient",
-                                         "eglWaitSync",
-                                         "eglBindAPI",
-                                         "eglClientWaitSyncKHR",
-                                         "eglCreateContext",
-                                         "eglCreateImageKHR",
-                                         "eglCreatePbufferSurface",
-                                         "eglDestroyContext",
-                                         "eglDestroyImageKHR",
-                                         "eglDestroySyncKHR",
-                                         "eglGetCurrentContext",
-                                         "eglGetCurrentDisplay",
-                                         "eglGetCurrentSurface",
-                                         "eglGetPlatformDisplay",
-                                         "eglGetPlatformDisplayEXT",
-                                         "eglGetSyncAttribKHR",
-                                         "eglMakeCurrent",
-                                         "eglQueryContext",
-                                         "eglQuerySurface",
-                                         "eglReleaseThread",
-                                         "eglSurfaceAttrib",
-                                         "eglSwapInterval",
-                                         "eglTerminate",
-                                         "eglWaitGL",
-                                         "eglWaitNative",
-                                         "eglWaitSyncKHR"};
+    constexpr std::string_view regular[]{"eglBindTexImage",       "eglClientWaitSync",
+                                         "eglCreateImage",        "eglCreatePbufferFromClientBuffer",
+                                         "eglCreateSync",         "eglDestroyImage",
+                                         "eglDestroySync",        "eglGetConfigs",
+                                         "eglGetSyncAttrib",      "eglQueryAPI",
+                                         "eglReleaseTexImage",    "eglWaitClient",
+                                         "eglWaitSync",           "eglBindAPI",
+                                         "eglClientWaitSyncKHR",  "eglCreateContext",
+                                         "eglCreateImageKHR",     "eglCreatePbufferSurface",
+                                         "eglDestroyContext",     "eglDestroyImageKHR",
+                                         "eglDestroySyncKHR",     "eglGetCurrentContext",
+                                         "eglGetCurrentDisplay",  "eglGetCurrentSurface",
+                                         "eglGetPlatformDisplay", "eglGetPlatformDisplayEXT",
+                                         "eglGetSyncAttribKHR",   "eglMakeCurrent",
+                                         "eglQueryContext",       "eglQuerySurface",
+                                         "eglReleaseThread",      "eglSetValidationEnabledANGLE",
+                                         "eglSurfaceAttrib",      "eglSwapInterval",
+                                         "eglTerminate",          "eglWaitGL",
+                                         "eglWaitNative",         "eglWaitSyncKHR"};
     if (std::ranges::find(regular, name) == std::end(regular))
         return 0;
     const std::string symbol(name);
-    const auto address =
-        name.ends_with("KHR") ? AngleEglProc(symbol.c_str()) : WindowsAngleExport(true, symbol.c_str());
+    const auto address = AngleEglProc(symbol.c_str());
     return address && !hostAbi ? Import(name, address) : address;
 }
 }

@@ -20,6 +20,7 @@ final class ArtDisplay {
     private final float animationScale;
     private final List<Object> callbacks = new ArrayList<>();
     private Object windowSession;
+    private final java.util.Set<android.os.IBinder> windowContexts=new java.util.HashSet<>();
 
     ArtDisplay(int uid) throws ReflectiveOperationException {
         int[] metrics = readMetrics();
@@ -67,6 +68,25 @@ final class ArtDisplay {
 
     synchronized Object windowCall(Object instance, Method method, Object[] arguments) throws ReflectiveOperationException {
         switch (method.getName()) {
+            case "attachWindowContextToDisplayArea": {
+                if((Integer)arguments[3]!=Display.DEFAULT_DISPLAY) return null;
+                android.os.IBinder token=(android.os.IBinder)arguments[1];
+                if(!Class.forName("android.window.WindowTokenClient").isInstance(token))
+                    throw new SecurityException("Window contexts require a local WindowTokenClient");
+                if(!windowContexts.contains(token) && windowContexts.size()>=256)
+                    throw new IllegalStateException("Too many window contexts");
+                Object result=Class.forName("android.window.WindowContextInfo")
+                    .getConstructor(android.content.res.Configuration.class,int.class)
+                    .newInstance(ArtConfiguration.current(),Display.DEFAULT_DISPLAY);
+                windowContexts.add(token);
+                return result;
+            }
+            case "detachWindowContext":
+                if(!windowContexts.remove((android.os.IBinder)arguments[0]))
+                    throw new IllegalArgumentException("Unknown window context");
+                return null;
+            case "reparentWindowContextToDisplayArea":
+                return (Integer)arguments[2]==Display.DEFAULT_DISPLAY && windowContexts.contains(arguments[1]);
             case "openSession": return windowSession;
             case "getCurrentAnimatorScale": return animationScale;
             case "hasNavigationBar": return false;
@@ -90,6 +110,15 @@ final class ArtDisplay {
     }
 
     float animationScale() { return animationScale; }
+    synchronized void configurationChanged(android.content.res.Configuration configuration) throws ReflectiveOperationException {
+        if(windowContexts.isEmpty()) return;
+        Class<?> type=Class.forName("android.window.WindowTokenClientController");
+        Object controller=type.getMethod("getInstance").invoke(null);
+        Method changed=type.getMethod("onWindowConfigurationChanged",android.os.IBinder.class,
+            android.content.res.Configuration.class,int.class);
+        for(android.os.IBinder token:new ArrayList<>(windowContexts))
+            changed.invoke(controller,token,new android.content.res.Configuration(configuration),Display.DEFAULT_DISPLAY);
+    }
     synchronized void resize(int width, int height, int density) throws ReflectiveOperationException {
         if (this.width == width && this.height == height && this.density == density) return;
         this.width = width; this.height = height;

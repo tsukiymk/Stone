@@ -3769,14 +3769,14 @@ intptr_t ReadGuestLink(const char* path, char* output, size_t capacity)
             std::memcpy(output, link.data(), copied);
             return static_cast<intptr_t>(copied);
         }
-        const std::filesystem::path input(std::u8string_view(reinterpret_cast<const char8_t*>(path)));
-        if (const auto system = AndroidSystemGuestPath(input); system && IsAndroidSystemGuestReadOnly(*system)) {
-            const auto link = std::filesystem::path(ReadAndroidSystemLink(*system)).u8string();
-            const auto copied = std::min(capacity, link.size());
-            std::memcpy(output, link.data(), copied);
-            return static_cast<intptr_t>(copied);
-        }
         if (!IsOwnExecutableLink(path)) {
+            const std::filesystem::path input(std::u8string_view(reinterpret_cast<const char8_t*>(path)));
+            if (const auto system = AndroidSystemGuestPath(input); system && IsAndroidSystemGuestReadOnly(*system)) {
+                const auto link = std::filesystem::path(ReadAndroidSystemLink(*system)).u8string();
+                const auto copied = std::min(capacity, link.size());
+                std::memcpy(output, link.data(), copied);
+                return static_cast<intptr_t>(copied);
+            }
             const auto host = GuestPath(path, false, false);
             const auto link = ReadAndroidSymbolicLink(host);
             if (!link) {

@@ -603,6 +603,11 @@ static void RunArtAppSample(const std::filesystem::path& directory, const std::f
     CopyReadOnlyCode(fs::canonical(dex), data / "probe.dex");
     CopyReadOnlyCode(fs::canonical(apk), data / "application.apk");
     CopyReadOnlyCode(fs::canonical(artHost), data / "stone-art-runtime.jar");
+    if (std::string_view(probeClass) == "com/trebledot/stone/runtime/WebViewProviderProbe") {
+        for (const auto* name : {"v2.apk", "unsigned.apk", "tampered-v2.apk", "launcher.apk"})
+            CopyReadOnlyCode(fs::canonical(dex.parent_path().parent_path() / "archives" / name),
+                             data / "webview-fixtures" / name);
+    }
     if (argument == L"codecs")
         CopyReadOnlyCode(fs::canonical(dex.parent_path() / L"opus-fixture.webm"), data / L"opus-fixture.webm");
     if (argument == L"video") {
@@ -949,6 +954,13 @@ void TestArtResizeWindowSample(const std::filesystem::path& directory, const std
 {
     RunArtAppSample(directory, dex, apk, artHost, "com/trebledot/stone/runtime/ResizeWindowProbe",
                     L"resize-window-sample-data", L"");
+}
+
+void TestArtWebViewProviderSample(const std::filesystem::path& directory, const std::filesystem::path& dex,
+                                  const std::filesystem::path& apk, const std::filesystem::path& artHost)
+{
+    RunArtAppSample(directory, dex, apk, artHost, "com/trebledot/stone/runtime/WebViewProviderProbe",
+                    L"webview-provider-sample-data", L"");
 }
 
 void TestArtStartupServicesSample(const std::filesystem::path& directory, const std::filesystem::path& dex,

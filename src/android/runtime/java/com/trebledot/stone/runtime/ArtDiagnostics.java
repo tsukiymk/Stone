@@ -82,6 +82,7 @@ final class ArtDiagnostics {
                     output.write("activity=" + activity.getClass().getName() + "\n");
                     output.write("source=" + activity.getApplicationInfo().sourceDir + "\n");
                     output.write("uid=" + activity.getApplicationInfo().uid + "\n");
+                    output.write("processStateSummaryBase64=" + ArtProcess.diagnosticStateSummary() + "\n");
                     output.write("applicationClassLoader=" + activity.getApplication().getClass().getClassLoader() + "\n");
                     output.write("activityClassLoader=" + activity.getClass().getClassLoader() + "\n");
                     android.content.Intent launch = ArtServices.activities.retainedIntent(activity);

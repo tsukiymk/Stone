@@ -43,6 +43,7 @@ final class ArtViewRoot implements AutoCloseable {
         invoke(View.class, view, "assignParent", new Class<?>[]{ViewParent.class}, root);
         attached = true;
         try {
+            registerGlobalRoot();
             ArtServices.windows.registerActivityRoot(activity, this);
             invoke(View.class, view, "dispatchAttachedToWindow", new Class<?>[]{info.getClass(), int.class}, info, View.VISIBLE);
             ArtSurfaceViews.suppressCompositor(view);
@@ -53,6 +54,29 @@ final class ArtViewRoot implements AutoCloseable {
     }
 
     static ArtViewRoot attach(Activity activity) throws ReflectiveOperationException { return new ArtViewRoot(activity); }
+
+    @SuppressWarnings("unchecked")
+    private void registerGlobalRoot() throws ReflectiveOperationException {
+        Object global=Class.forName("android.view.WindowManagerGlobal").getMethod("getInstance").invoke(null);
+        android.view.WindowManager.LayoutParams params=activity.getWindow().getAttributes();
+        ((android.view.WindowManager.LayoutParams)field(root,"mWindowAttributes").get(root)).copyFrom(params);
+        view.setLayoutParams(params);
+        synchronized(field(global,"mLock").get(global)) {
+            java.util.List<View> views=(java.util.List<View>)field(global,"mViews").get(global);
+            java.util.List<Object> roots=(java.util.List<Object>)field(global,"mRoots").get(global);
+            java.util.List<android.view.WindowManager.LayoutParams> attributes=
+                (java.util.List<android.view.WindowManager.LayoutParams>)field(global,"mParams").get(global);
+            if(views.contains(view)) throw new IllegalStateException("Activity decor already registered");
+            views.add(view); roots.add(root); attributes.add(params);
+            Object listeners=field(global,"mWindowViewsListenerGroup").get(global);
+            listeners.getClass().getMethod("accept",Object.class).invoke(listeners,new java.util.ArrayList<>(views));
+        }
+    }
+
+    private void unregisterGlobalRoot() throws ReflectiveOperationException {
+        Object global=Class.forName("android.view.WindowManagerGlobal").getMethod("getInstance").invoke(null);
+        invoke(global.getClass(),global,"doRemoveView",new Class<?>[]{root.getClass()},root);
+    }
 
     IBinder windowToken() throws ReflectiveOperationException {
         return ((android.os.IInterface) field(root,"mWindow").get(root)).asBinder();
@@ -216,6 +240,7 @@ final class ArtViewRoot implements AutoCloseable {
                 releaseLayer();
                 attached = false;
                 ArtServices.windows.unregisterActivityRoot(activity, this);
+                unregisterGlobalRoot();
             }
         }
     }

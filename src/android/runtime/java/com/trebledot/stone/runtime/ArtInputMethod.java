@@ -12,6 +12,8 @@ import java.util.Map;
 /** Local editor client registry; no Android IME engine is exposed. */
 final class ArtInputMethod {
     private final Map<IBinder, Object[]> clients = new HashMap<>();
+    private final int user;
+    ArtInputMethod(int user) { this.user=user; }
 
     /** One contiguous Win32 text burst; each character retains its edit callback. */
     static final class TextSession implements AutoCloseable {
@@ -39,6 +41,14 @@ final class ArtInputMethod {
 
     Object call(Object instance, Method method, Object[] arguments) throws ReflectiveOperationException {
         switch (method.getName()) {
+            case "getInputMethodList":
+            case "getEnabledInputMethodList":
+                if((Integer)arguments[0]!=user) throw new SecurityException("Input methods are restricted to the current user");
+                return method.getReturnType()==java.util.List.class?java.util.Collections.emptyList():
+                    method.getReturnType().getMethod("create",java.util.List.class).invoke(null,java.util.Collections.emptyList());
+            case "getCurrentInputMethodInfoAsUser":
+                if((Integer)arguments[0]!=user) throw new SecurityException("Input methods are restricted to the current user");
+                return null;
             case "addClient":
                 clients.put(((IInterface) arguments[0]).asBinder(), arguments.clone());
                 return null;

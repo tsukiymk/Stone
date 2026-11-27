@@ -12,7 +12,10 @@ namespace stone::windows {
 uintptr_t AndroidFrameworkGlImport(std::string_view name, uintptr_t address);
 
 namespace {
-constexpr std::string_view UnbridgedDebug = "GL_KHR_debug";
+bool UnbridgedExtension(std::string_view name)
+{
+    return name == "GL_KHR_debug" || name == "GL_ANGLE_blob_cache";
+}
 
 uintptr_t FindAngleGl(const char* name)
 {
@@ -48,7 +51,7 @@ const GLubyte* GlString(GLenum name)
     if (!value || name != GL_EXTENSIONS)
         return value;
     const std::string_view list(reinterpret_cast<const char*>(value));
-    if (list.find(UnbridgedDebug) == list.npos)
+    if (list.find("GL_KHR_debug") == list.npos && list.find("GL_ANGLE_blob_cache") == list.npos)
         return value;
     static std::mutex mutex;
     static std::unordered_map<std::string, std::string> filtered;
@@ -62,7 +65,7 @@ const GLubyte* GlString(GLenum name)
         while (!remaining.empty()) {
             const auto end = remaining.find(' ');
             const auto extension = remaining.substr(0, end);
-            if (!extension.empty() && extension != UnbridgedDebug) {
+            if (!extension.empty() && !UnbridgedExtension(extension)) {
                 if (!result.empty())
                     result += ' ';
                 result += extension;
@@ -79,17 +82,18 @@ const GLubyte* GlString(GLenum name)
     }
 }
 
-GLuint FindDebugExtension(GLuint count)
+GLuint UnbridgedExtensionCount(GLuint count)
 {
+    GLuint hidden = 0;
     static const auto query = AngleGl<decltype(&glGetStringi)>("glGetStringi");
     if (query) {
         for (GLuint i = 0; i < count; ++i) {
             const auto value = query(GL_EXTENSIONS, i);
-            if (value && reinterpret_cast<const char*>(value) == UnbridgedDebug)
-                return i;
+            if (value && UnbridgedExtension(reinterpret_cast<const char*>(value)))
+                ++hidden;
         }
     }
-    return count;
+    return hidden;
 }
 
 void GlInteger(GLenum name, GLint* value)
@@ -104,7 +108,7 @@ void GlInteger(GLenum name, GLint* value)
     if (count < 0)
         return;
     const auto size = static_cast<GLuint>(count);
-    *value = count - (FindDebugExtension(size) != size ? 1 : 0);
+    *value = count - UnbridgedExtensionCount(size);
 }
 
 const GLubyte* GlIndexedString(GLenum name, GLuint index)
@@ -115,9 +119,14 @@ const GLubyte* GlIndexedString(GLenum name, GLuint index)
     static const auto get = AngleGl<decltype(&glGetIntegerv)>("glGetIntegerv");
     GLint count = 0;
     get(GL_NUM_EXTENSIONS, &count);
-    if (count > 0 && index < static_cast<GLuint>(count) && FindDebugExtension(static_cast<GLuint>(count)) <= index)
-        ++index;
-    return query(name, index);
+    for (GLuint source = 0; count > 0 && source < static_cast<GLuint>(count); ++source) {
+        const auto value = query(name, source);
+        if (value && UnbridgedExtension(reinterpret_cast<const char*>(value)))
+            continue;
+        if (!index--)
+            return value;
+    }
+    return query(name, static_cast<GLuint>(std::max(count, 0))); // Preserve the driver's invalid-index error.
 }
 }
 
@@ -333,6 +342,7 @@ uintptr_t Libgles(std::string_view name, bool hostAbi)
         "glGetFragDataLocation",
         "glGetFramebufferAttachmentParameteriv",
         "glGetGraphicsResetStatusEXT",
+        "glGetGraphicsResetStatusKHR",
         "glGetInteger64i_v",
         "glGetInteger64v",
         "glGetIntegeri_v",

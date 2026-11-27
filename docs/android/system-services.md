@@ -6,6 +6,8 @@ Service samples and persistently manages host state. Android tokens, listeners, 
 
 Power snapshots come from Windows power state and include supply, charging, battery level, and battery saver mode. Android battery thresholds come from image resources. The image dispatches initial sticky broadcasts and later changes. Unknown fields remain unknown; temperature, current, energy, and other values unavailable from Windows are not fabricated.
 
+The thermal service follows Android's state without a thermal HAL: no Android thermal throttling is active (`THERMAL_STATUS_NONE`), and registered status listeners receive that initial state. This is not a measurement of Windows thermal pressure. Thermal headroom is unavailable (`NaN`); sensor telemetry and other thermal interfaces remain unsupported.
+
 ART manages Java tokens, reference counts, and timeouts for supported partial wake locks. Service holds Windows power requests against registered Client process handles and cleans them up when the process exits. This does not provide full Doze, the Android power HAL, or system sleep policy.
 
 ## JobScheduler

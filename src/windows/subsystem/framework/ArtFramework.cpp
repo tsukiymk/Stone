@@ -1174,6 +1174,8 @@ bool RegisterArtHost(JNIEnv* env)
         return false;
     if (!RegisterImageNative(env, "libhwui.so", "register_android_graphics_drawable_AnimatedVectorDrawable"))
         return false;
+    if (!RegisterImageNative(env, "libhwui.so", "register_android_graphics_HardwareRendererObserver"))
+        return false;
     for (const auto* name :
          {"register_android_hardware_OverlayProperties", "register_android_hardware_display_DisplayManagerGlobal"}) {
         if (!RegisterImageNative(env, "libandroid_runtime.so", name, false))
@@ -1615,6 +1617,41 @@ bool RegisterArtHost(JNIEnv* env)
             }),
     };
     if (!Bind(env, "com/trebledot/stone/runtime/ArtBoot", application))
+        return false;
+    const JNINativeMethod webView[]{
+        Native(
+            "bindNativeLibraries", "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+            +[](JNIEnv* env, jclass, jobject loader, jstring source, jstring directory, jstring data) {
+                try {
+                    BindArtWebViewLibraries(env, loader, NotificationText(env, source, 32767),
+                                            NotificationText(env, directory, 32767),
+                                            NotificationText(env, data, 32767));
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/io/IOException", error.what());
+                }
+            }),
+        Native(
+            "loadNativeLibrary", "(Ljava/lang/Class;Ljava/lang/String;)V",
+            +[](JNIEnv* env, jclass, jclass owner, jstring path) {
+                const auto type = ArtJni<&JNINativeInterface_::FindClass>(env, "java/lang/Runtime");
+                if (!type)
+                    return;
+                const auto get =
+                    ArtJni<&JNINativeInterface_::GetStaticMethodID>(env, type, "getRuntime", "()Ljava/lang/Runtime;");
+                const auto load = get ? ArtJni<&JNINativeInterface_::GetMethodID>(
+                                            env, type, "load0", "(Ljava/lang/Class;Ljava/lang/String;)V")
+                                      : nullptr;
+                const auto runtime =
+                    load ? ArtJni<&JNINativeInterface_::CallStaticObjectMethodA>(env, type, get, nullptr) : nullptr;
+                if (runtime) {
+                    const jvalue arguments[]{jvalue{.l = owner}, jvalue{.l = path}};
+                    ArtJni<&JNINativeInterface_::CallVoidMethodA>(env, runtime, load, arguments);
+                    ArtJni<&JNINativeInterface_::DeleteLocalRef>(env, runtime);
+                }
+                ArtJni<&JNINativeInterface_::DeleteLocalRef>(env, type);
+            })};
+    if (!Bind(env, "com/trebledot/stone/runtime/ArtWebView", webView))
         return false;
     const JNINativeMethod storage[]{
         Native(

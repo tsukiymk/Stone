@@ -63,6 +63,7 @@ void* LoadArtDex2Oat();
 void LoadArtImageLibrary(std::string_view soname);
 void SetArtApplicationLibraries(const std::filesystem::path& directory, const std::filesystem::path& dataDirectory,
                                 std::string_view guestData);
+void SetArtPrivateLibraryRoot(const std::filesystem::path& dataDirectory, std::string_view guestData);
 uintptr_t ArtImageLibraryExport(std::string_view soname, std::string_view symbol);
 uintptr_t AndroidRuntimeFunction(std::string_view soname, std::string_view symbol, bool allowUniqueSuffix = false);
 }

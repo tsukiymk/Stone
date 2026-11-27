@@ -10,4 +10,6 @@ uintptr_t Libnativeloader(std::string_view name);
 uintptr_t AndroidNativeLoaderImport(std::string_view name, bool hostAbi);
 void BindArtNativeLibraries(JNIEnv* env, jobject loader, const std::wstring& directory,
                             const std::wstring& dataDirectory);
+void BindArtWebViewLibraries(JNIEnv* env, jobject loader, const std::wstring& source, const std::wstring& directory,
+                             const std::wstring& dataDirectory);
 }

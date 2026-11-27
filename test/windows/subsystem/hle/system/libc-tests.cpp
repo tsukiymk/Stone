@@ -1372,6 +1372,37 @@ void TestInotifyStorage(Suite& suite)
             ReadAndroidSystemLink(L"system");
         });
     });
+    suite.Run("proc-executable-link-with-image-mount-and-truncation", [] {
+        namespace fs = std::filesystem;
+        const auto profile = fs::current_path() / ("stone-proc-exe-" + std::to_string(GetCurrentProcessId()));
+        STONE_CHECK(!fs::exists(profile));
+        fs::create_directories(profile / "cache");
+        fs::create_directories(profile / "data");
+        const auto cleanup = [&](void*) {
+            std::error_code ignored;
+            fs::remove_all(profile, ignored);
+        };
+        const std::unique_ptr<void, decltype(cleanup)> guard(reinterpret_cast<void*>(1), cleanup);
+        SetAndroidSystemDirectory(profile / "cache", profile / "data");
+        const auto link = Guest<intptr_t (*)(const char*, char*, size_t)>(Libc("readlink"), "(LLJ)J");
+        std::array<wchar_t, 32768> executable{};
+        const auto length = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+        STONE_CHECK(length && length < executable.size());
+        const auto utf8 = fs::path(std::wstring_view(executable.data(), length)).generic_u8string();
+        const auto expected = AndroidGuestFilePath({reinterpret_cast<const char*>(utf8.data()), utf8.size()});
+        std::array<char, 4096> bytes{};
+        for (const auto& path :
+             {std::string("/proc/self/exe"), "/proc/" + std::to_string(GetCurrentProcessId()) + "/exe"}) {
+            bytes.fill('?');
+            STONE_CHECK(link(path.c_str(), bytes.data(), bytes.size()) == static_cast<intptr_t>(expected.size()));
+            STONE_CHECK(std::string_view(bytes.data(), expected.size()) == expected && bytes[expected.size()] == '?');
+            STONE_CHECK(link(path.c_str(), bytes.data(), 3) == 3 &&
+                        std::string_view(bytes.data(), 3) == expected.substr(0, 3));
+        }
+        STONE_CHECK(link("/proc/self/exe", bytes.data(), 0) == -1 && errno == EINVAL);
+        STONE_CHECK(link("/proc/0/exe", bytes.data(), bytes.size()) == -1 && errno == ENOENT);
+        STONE_CHECK(link("/proc/self/exe-extra", bytes.data(), bytes.size()) == -1 && errno == ENOENT);
+    });
     suite.Run("inotify-shared-storage-grants-revocation-and-private-boundary", [] {
         namespace fs = std::filesystem;
         const auto profile = fs::current_path() / ("stone-inotify-storage-" + std::to_string(GetCurrentProcessId()));

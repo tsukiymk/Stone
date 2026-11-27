@@ -26,9 +26,9 @@ Image preparation examines the immediate package subdirectories under `app` and 
 
 It reads `system`, `product`, and `system_ext` partitions from GPT/super images, including `_a` slots and sparse containers. For `product` and `system_ext`, each partition is resolved independently: a separate partition takes precedence; if it is absent, the corresponding directory embedded in the system filesystem is used instead. A separate partition and its embedded counterpart are not merged.
 
-Copied APKs retain their original bytes and guest paths. The sorted candidate paths are published in `/system/etc/stone-webview-apks.list` after all copies succeed. Successful preparation without candidates produces an empty list.
+Copied APKs retain their original bytes and guest paths. Provider libraries under each package's `lib/<architecture>/` directory are preserved too. Library symlinks must resolve inside the selected image's system, product, or system_ext partitions; cycles and escaping links are rejected. The image's optional `libwebviewchromium_plat_support.so` and its dependencies are also prepared. The sorted candidate APK paths are published in `/system/etc/stone-webview-apks.list` after all copies succeed. Successful preparation without candidates produces an empty list.
 
-This resource list does not register a provider or establish WebView availability. The runtime WebView update service, provider loading, and rendering flow remain incomplete. Some Google Play images contain only small `WebViewGoogle-Stub` and `TrichromeLibrary-Stub` APKs; copying those packages does not supply the WebView engine. Provider manifest/signature validation and a complete engine are still required.
+Some Google Play images contain only small `WebViewGoogle-Stub` and `TrichromeLibrary-Stub` APKs with no WebView engine. Copying or verifying those packages does not supply one. A complete provider, its shared-library dependencies, and native loading/rendering support are still required.
 
 ## Execution and compilation
 
@@ -37,6 +37,18 @@ For x86_64 images, Java JIT is not proactively enabled by default; explicit `--e
 `--enable-aot` uses image dex2oat to generate persistent OAT/VDEX for the actual APK; see [APK AOT](art-aot.md). ARM64-to-x64 native blocks and disk caching are independent of ART Java JIT; see [translation caching](arm64-translation-cache.md).
 
 ELF/TLS, calling conventions, JNI, signal recovery, and Windows executable-page adaptation are managed by the [native compatibility layers](../architecture/native-layers.md). Application native class-loader namespaces remain limited; complete static imports do not establish JNI application compatibility.
+
+## WebView provider selection and loading
+
+The in-process `webviewupdate` service reads the image's `config_webview_packages` resource and provides independent copies of its configured/default provider descriptions. At application startup, it checks the prepared candidate paths and uses the image's manifest parser and full-content APK signature verifier. It requires WebView library metadata, DEX code, and an embedded or adjacent native library for the active ABI. Image resource overlays and installed provider updates are not applied.
+
+Automatic selection requires a matching configured package name, any configured signer certificates, and `availableByDefault=true` in the provider configuration. The loader currently requires the Chromium factory class `com.android.webview.chromium.WebViewChromiumFactoryProviderForT`; providers with other factory implementations are unsupported.
+
+On native x64, an eligible provider receives its own reserved image-package UID and a retained image-code context. Its native libraries are hashed and sealed in the running application's code cache, and loaded through ART with a registered provider ClassLoader. Only after native loading succeeds is the provider exposed by current-package queries and `FEATURE_WEBVIEW`. The update response then reports missing shared RELRO, rather than claiming RELRO preparation succeeded. Failed loading leaves no selected provider and no advertised feature. Privileged provider administration and installed updates are rejected. Discovery and loading results are logged under `StoneWebView`.
+
+Native loading alone does not prove page compatibility. Renderer process launch and page rendering remain experimental; Android isolated renderer services are not connected. A debuggable Chromium provider can read `/data/local/tmp/webview-command-line` from the chosen profile's `data/local/tmp/` directory, including Chromium's `--single-process` option for experiments with the in-process renderer. This does not provide Android renderer isolation.
+
+See [WebView provider and rendering checks](../development/build.md#webview-provider-and-rendering-checks) for test prerequisites, invocation, and coverage.
 
 ## Compatibility limits
 

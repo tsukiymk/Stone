@@ -397,6 +397,10 @@ public final class ArtPackage implements Closeable {
                     ? new android.content.pm.Signature[]{signing.getSigningCertificateHistory()[0]}
                     : signing.getApkContentsSigners().clone();
         }
+        if(result.requestedPermissions!=null && result.requestedPermissionsFlags!=null)
+            for(int index=0;index<result.requestedPermissions.length;index++)
+                if(ArtPermissions.networkGranted(result,result.requestedPermissions[index]))
+                    result.requestedPermissionsFlags[index]|=PackageInfo.REQUESTED_PERMISSION_GRANTED;
         return result;
     }
 

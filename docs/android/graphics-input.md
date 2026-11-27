@@ -6,6 +6,8 @@ Stone drives image ViewRoot, software Canvas, and the current Activity inside it
 
 An Activity root can cache a software frame until invalidated. Layout, animation, View invalidation, and explicit redraws trigger new drawing. Draw observers still run each frame, and invalidations during drawing are not lost. Failed frames are not cached as valid. Resizing and destruction release old bitmaps and Canvas objects; child windows are composited independently.
 
+Software Activity roots are registered with the image's WindowManagerGlobal for layout-parameter updates and window-view queries, and removed on detach. They remain surface-free; registration does not enable SurfaceFlinger traversal. Default-display window contexts retain their tokens and receive configuration changes.
+
 Software windows convert ImageDecoder default/hardware allocator requests and BitmapFactory HARDWARE preferences to software storage while keeping image decoding in the image implementation. BitmapFactory uses a separate Options copy and writes back output fields without temporarily modifying caller inputs.
 
 New bitmap defaults follow the window's current display density, including Windows DPI changes. This keeps cached text images at their measured pixel size when drawn on the software Canvas, while bitmaps with an explicit resource density retain Android's normal density scaling.
@@ -21,6 +23,8 @@ The Windows-backed video MediaCodecs can publish decoded pixels into a Stone sof
 Guest EGL first probes the Windows D3D11 ANGLE backend, then Vulkan and OpenGL, and finally D3D11 WARP. A display handle is selected only after initialization succeeds. Available backends depend on the ANGLE build and host drivers.
 
 The bundled ANGLE build includes D3D11 and WARP. Stone loads `libEGL.dll` and `libGLESv2.dll` only from the executable's directory, independently of the working directory, including package-management and Service-created Clients. Missing or incompatible EGL/GLES DLLs cause graphics initialization to fail. ANGLE loads D3DCompiler through the Windows DLL search rules; this dependency is bundled as `d3dcompiler_47.dll`. See [ANGLE sources and licenses](../third-party/angle.md).
+
+Chromium's ANGLE and robustness entry points use checked Khronos prototypes, including mixed floating-point arguments and stack arguments. EGL procedure lookup also resolves ANGLE's procedure-only exports. GLES extension enumeration hides `GL_KHR_debug` and `GL_ANGLE_blob_cache`, whose driver callbacks do not yet have a guest ABI bridge; string, indexed, and count queries agree.
 
 ## Window resizing
 

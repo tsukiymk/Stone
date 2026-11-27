@@ -42,6 +42,20 @@ void TestGraphics(Suite& suite)
         STONE_CHECK(error() == EGL_BAD_PARAMETER);
         STONE_CHECK(error() == EGL_SUCCESS);
     });
+    suite.Run("libegl-angle-procedure-lookup-and-validation-state", [] {
+        const auto lookup = Guest<uintptr_t (*)(const char*)>(Libegl("eglGetProcAddress"), "(L)J");
+        STONE_CHECK(lookup("eglStoneUnknownCommand") == 0);
+        const auto address = lookup("eglSetValidationEnabledANGLE");
+        STONE_CHECK(address);
+        const auto set = Guest<void (*)(EGLBoolean)>(address, "(I)V");
+        const auto state = reinterpret_cast<unsigned (*)()>(
+            GetProcAddress(GetModuleHandleW(L"libEGL.dll"), "StoneTestEglValidationEnabled"));
+        STONE_CHECK(state && state() == EGL_TRUE);
+        set(EGL_FALSE);
+        STONE_CHECK(state() == EGL_FALSE);
+        set(EGL_TRUE);
+        STONE_CHECK(state() == EGL_TRUE);
+    });
     suite.Run("libglesv2-consistent-string-index-and-count-queries", [] {
         const auto get = Guest<const char* (*)(GLenum)>(Libgles("glGetString"), "(I)L");
         const auto indexed = Guest<const char* (*)(GLenum, GLuint)>(Libgles("glGetStringi"), "(II)L");
@@ -58,6 +72,10 @@ void TestGraphics(Suite& suite)
         GLint count = -1;
         integer(GL_NUM_EXTENSIONS, &count);
         STONE_CHECK(count == 2);
+    });
+    suite.Run("libglesv2-khr-graphics-reset-status", [] {
+        const auto reset = Guest<GLenum (*)()>(Libgles("glGetGraphicsResetStatusKHR"), "()I");
+        STONE_CHECK(reset() == 0x8253);
     });
     suite.Run("libvulkan-loader-capability-and-unknown-symbol", [] {
         STONE_CHECK(Libvulkan("vkStoneUnknownCommand") == 0);

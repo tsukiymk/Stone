@@ -165,6 +165,8 @@ final class ArtPackageStore {
                     throw new Failure(PackageInstaller.STATUS_FAILURE_ABORTED, "Install session was already published");
                 Properties updated = (Properties) state.clone();
                 PackageInfo next = copy(candidate.info);
+                if(state.containsKey("imageUid."+next.packageName))
+                    throw new Failure(PackageInstaller.STATUS_FAILURE_INCOMPATIBLE,"Image provider updates are not connected");
                 if (state.containsKey("removing." + next.packageName))
                     throw new Failure(PackageInstaller.STATUS_FAILURE_BLOCKED, "Package removal must finish before installing again");
                 PackageInfo old = record(state, next.packageName);
@@ -259,6 +261,26 @@ final class ArtPackageStore {
             PackageInfo info = record(state, name);
             if (info == null && isRunning(name)) return running.packageInfo(flags);
             return info == null ? null : filter(info, flags);
+        });
+    }
+
+    int reserveImageUid(String name) throws IOException {
+        validateName(name);
+        return locked(state -> {
+            if(record(state,name)!=null || isRunning(name))
+                throw new IOException("Image provider conflicts with an application registration: "+name);
+            String key="imageUid."+name;
+            int next=Integer.parseInt(state.getProperty("nextUid","10001"));
+            String saved=state.getProperty(key);
+            if(saved!=null) {
+                int uid=Integer.parseInt(saved);
+                if(uid<10001 || uid>19999 || uid>=next) throw new IOException("Invalid image provider UID");
+                return uid;
+            }
+            if(next<10001 || next>19999) throw new IOException("Image provider UID range exhausted");
+            Properties updated=(Properties)state.clone();
+            updated.setProperty(key,Integer.toString(next)); updated.setProperty("nextUid",Integer.toString(next+1));
+            save(updated); return next;
         });
     }
 

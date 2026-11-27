@@ -28,7 +28,8 @@ final class WifiProbe {
                 +" feature="+context.getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_WIFI)
                 +" v1="+context.getPackageManager().hasSystemFeature(android.content.pm.PackageManager.FEATURE_WIFI,1));
         android.content.pm.FeatureInfo[] features = context.getPackageManager().getSystemAvailableFeatures();
-        if (features.length != (present ? 1 : 0) || present && !android.content.pm.PackageManager.FEATURE_WIFI.equals(features[0].name))
+        long wifiEntries=Arrays.stream(features).filter(feature -> android.content.pm.PackageManager.FEATURE_WIFI.equals(feature.name)).count();
+        if (wifiEntries != (present ? 1 : 0))
             throw new AssertionError("Feature inventory disagrees with WLAN presence");
         WifiManager wifi = context.getSystemService(WifiManager.class);
         if ((wifi != null) != present) throw new AssertionError("WifiManager disagrees with sampled WLAN presence");

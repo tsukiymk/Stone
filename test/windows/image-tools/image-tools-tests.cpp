@@ -506,9 +506,9 @@ void EndToEnd(const fs::path& root, const fs::path& executable)
         {"etc/classpaths/bootclasspath.pb", Jar("/apex/com.android.art/javalib/core-oj.jar")},
         {"javalib/core-oj.jar", {0x50, 0x4b}},
         {"bin/dex2oat64", Elf()}};
-    for (const auto* name :
-         {"libart.so", "libartpalette-system.so", "libjavacore.so", "libopenjdkjvm.so", "libopenjdk.so",
-          "libjavacrypto.so", "libjnigraphics.so", "libandroid.so", "libandroid_runtime.so", "libhwui.so"})
+    for (const auto* name : {"libart.so", "libartpalette-system.so", "libjavacore.so", "libopenjdkjvm.so",
+                             "libopenjdk.so", "libjavacrypto.so", "libjnigraphics.so", "libandroid.so",
+                             "libandroid_runtime.so", "libhwui.so", "libwebviewchromium_plat_support.so"})
         apexFiles[std::string("lib64/") + name] = Elf();
     auto apex = Zip("apex_payload.img", Ext4(*Tree(apexFiles)));
     std::map<std::string, Bytes> files{{"build.prop", Data("ro.build.version.sdk=37\n")},
@@ -525,9 +525,23 @@ void EndToEnd(const fs::path& root, const fs::path& executable)
         if (child->name == "fonts")
             Alias(*child, "alias.ttf", "/system/fonts/font.ttf");
     auto image = root / L"system.img", cache = root / L"cache", index = root / L"index.txt";
-    auto product = Ext4(*Tree({{"app/WebViewGoogle64/WebViewGoogle64.apk", Data("product webview")},
-                               {"app/TrichromeLibrary64/TrichromeLibrary64.apk", Data("shared library")},
-                               {"app/Unrelated/Unrelated.apk", Data("unrelated")}}));
+    auto productTree = Tree({{"app/WebViewGoogle64/WebViewGoogle64.apk", Data("product webview")},
+                             {"app/TrichromeLibrary64/TrichromeLibrary64.apk", Data("shared library")},
+                             {"app/WebViewGoogle64/lib/x86_64/libwebviewchromium.so", Elf()},
+                             {"lib64/libprovider.so", Elf()},
+                             {"app/Unrelated/Unrelated.apk", Data("unrelated")}});
+    Node* nativeDirectory = productTree.get();
+    for (const auto* part : {"app", "WebViewGoogle64", "lib", "x86_64"}) {
+        auto child =
+            std::find_if(nativeDirectory->children.begin(), nativeDirectory->children.end(), [&](const auto& node) {
+                return node->name == part;
+            });
+        Expect(child != nativeDirectory->children.end(), "Native provider fixture directory");
+        nativeDirectory = child->get();
+    }
+    Alias(*nativeDirectory, "librelative.so", "../../../../lib64/libprovider.so");
+    Alias(*nativeDirectory, "libabsolute.so", "/product/lib64/libprovider.so");
+    auto product = Ext4(*productTree);
     auto extension = Ext4(*Tree({{"priv-app/AlternateWebView/base.apk", Data("extension webview")}}));
     Write(image, Sparse(Gpt(Super({{"system_a", Ext4(*tree)}, {"product_a", product}, {"system_ext_a", extension}}),
                             L"super")));
@@ -543,6 +557,11 @@ void EndToEnd(const fs::path& root, const fs::path& executable)
                Data("/apex/com.android.art/javalib/core-oj.jar\n/system/framework/framework.jar\n"),
            "Boot classpath publication/order");
     Expect(Read(output / L"lib64/libart.so") == Elf(), "ART library bytes preserved");
+    Expect(Read(output / L"lib64/libwebviewchromium_plat_support.so") == Elf(),
+           "Image WebView platform support library bytes preserved");
+    for (const auto* name : {L"libwebviewchromium.so", L"librelative.so", L"libabsolute.so"})
+        Expect(Read(output / L"product/app/WebViewGoogle64/lib/x86_64" / name) == Elf(),
+               "Provider native files and image-contained library links preserve bytes");
     Expect(Read(output / L"system/fonts/alias.ttf") == Bytes({1, 2, 3}), "Font alias resolution");
     Expect(Read(output / L"product/app/WebViewGoogle64/WebViewGoogle64.apk") == Data("product webview") &&
                Read(output / L"product/app/TrichromeLibrary64/TrichromeLibrary64.apk") == Data("shared library"),

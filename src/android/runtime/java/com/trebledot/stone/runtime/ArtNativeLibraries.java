@@ -54,6 +54,41 @@ final class ArtNativeLibraries {
     private static String digest(File file) throws IOException {
         try (InputStream input = new FileInputStream(file)) { return digest(input); }
     }
+
+    static String prepareImageProvider(ApplicationInfo info,String data,String library) throws IOException {
+        ApplicationInfo extraction=new ApplicationInfo(info); extraction.dataDir=data;
+        prepare(extraction);
+        if(extraction.nativeLibraryDir!=null) return extraction.nativeLibraryDir;
+        File source=imageLibrary(info,library);
+        if(source==null) throw new IOException("Image provider native library is absent");
+        String expected=digest(source);
+        File directory=new File(data,"code_cache/stone-webview/"+digest(new File(info.sourceDir))+"-"+expected);
+        if(!directory.isDirectory() && !directory.mkdirs()) throw new IOException("Cannot prepare WebView native cache");
+        File target=new File(directory,library);
+        if(!target.isFile() || target.canWrite() || !expected.equals(digest(target))) {
+            File temporary=File.createTempFile("webview-",".tmp",directory);
+            try {
+                try(InputStream input=new FileInputStream(source); OutputStream output=new FileOutputStream(temporary)) {
+                    byte[] buffer=new byte[65536]; long total=0;
+                    for(int count;(count=input.read(buffer))!=-1;) {
+                        if((total+=count)>256L*1024*1024) throw new IOException("WebView native library exceeds size limit");
+                        output.write(buffer,0,count);
+                    }
+                }
+                if(!expected.equals(digest(temporary)) || !temporary.setReadOnly()) throw new IOException("Cannot seal WebView native library");
+                if(target.exists() && (!target.setWritable(true) || !target.delete())) throw new IOException("Cannot replace WebView native cache");
+                if(!temporary.renameTo(target)) throw new IOException("Cannot publish WebView native library");
+            } finally { temporary.delete(); }
+        }
+        return directory.getPath();
+    }
+
+    static File imageLibrary(ApplicationInfo info,String library) throws IOException {
+        String isa="x86_64".equals(Build.SUPPORTED_64_BIT_ABIS[0])?"x86_64":"arm64";
+        File parent=new File(info.sourceDir).getCanonicalFile().getParentFile();
+        File file=new File(parent,"lib/"+isa+"/"+library).getCanonicalFile();
+        return file.getPath().startsWith(parent.getPath()+"/") && file.isFile()?file:null;
+    }
     private static String digest(InputStream input) throws IOException {
         try {
             MessageDigest hash = MessageDigest.getInstance("SHA-256");

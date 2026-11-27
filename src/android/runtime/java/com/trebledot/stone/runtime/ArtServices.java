@@ -13,6 +13,7 @@ import android.content.pm.SigningInfo;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IInterface;
 import android.os.UserHandle;
 import java.lang.reflect.Field;
@@ -37,6 +38,9 @@ final class ArtServices {
     static ArtDisplay display;
     static ArtJobs jobs;
     static ArtStorage storage;
+    static ArtWebView webView;
+    private static Object frameworkFeatureCache;
+    private static List<android.content.pm.FeatureInfo> features;
     static final ArtActivities activities = new ArtActivities();
     static final ArtWindowSession windows = new ArtWindowSession();
     private ArtServices() {}
@@ -51,6 +55,8 @@ final class ArtServices {
         if (cache.containsKey("activity")) throw new IllegalStateException("Activity service is already installed");
         installRegistry(cache);
         cache.put("location", service("android.location.ILocationManager", ArtLocation::call));
+        webView = new ArtWebView();
+        cache.put("webviewupdate", service("android.webkit.IWebViewUpdateService", webView::call));
         cache.put("appwidget", service("com.android.internal.appwidget.IAppWidgetService", (instance, method, arguments) -> {
             // Stone has no Android widget host or bound widget instances.
             switch (method.getName()) {
@@ -69,12 +75,13 @@ final class ArtServices {
         cache.put("audio",service("android.media.IAudioService",audio::call));
         boolean hasWifi = ArtWifi.available();
         List<android.content.pm.FeatureInfo> availableFeatures=new ArrayList<>(Arrays.asList(ArtWifi.features(hasWifi)));
+        features=availableFeatures;
         boolean hasAudio=ArtAudio.available();
         if(hasAudio) {
             android.content.pm.FeatureInfo info=new android.content.pm.FeatureInfo();
             info.name=PackageManager.FEATURE_AUDIO_OUTPUT; availableFeatures.add(info);
         }
-        Object shared = initializeFrameworkState(availableFeatures);
+        Object shared = initializeFrameworkState(availableFeatures,true);
         Class<?> sharedType = shared.getClass();
         Class<?> typeface = Class.forName("android.graphics.Typeface");
         typeface.getMethod("loadPreinstalledSystemFontMap").invoke(null);
@@ -96,7 +103,8 @@ final class ArtServices {
                 default: throw new UnsupportedOperationException("ART input service: " + method.getName());
             }
         }));
-        ArtInputMethod inputMethod = new ArtInputMethod();
+        int localUser = (Integer) UserHandle.class.getMethod("myUserId").invoke(null);
+        ArtInputMethod inputMethod = new ArtInputMethod(localUser);
         cache.put("input_method", service("com.android.internal.view.IInputMethodManager", inputMethod::call));
         String controllerDescriptor = "android.app.IActivityClientController";
         Binder controller = service(controllerDescriptor, activities::call);
@@ -116,7 +124,6 @@ final class ArtServices {
                 default: throw new UnsupportedOperationException("ART activity task service: " + method.getName());
             }
         }));
-        int localUser = (Integer) UserHandle.class.getMethod("myUserId").invoke(null);
         try { ArtDocumentTrees.initialize(apk,localUser); }
         catch(java.io.IOException error) { throw new IllegalStateException("Cannot initialize selected directories",error); }
         cache.put("uri_grants",service("android.app.IUriGrantsManager",ArtDocumentTrees::permissions));
@@ -180,11 +187,8 @@ final class ArtServices {
                 default: throw new UnsupportedOperationException("ART device idle service: " + method.getName());
             }
         }));
-        // PowerManager's image constructor also requires this Binder. Thermal
-        // telemetry is not available; do not synthesize temperatures or status.
-        cache.put("thermalservice", service("android.os.IThermalService", (instance, method, arguments) -> {
-            throw new UnsupportedOperationException("Windows thermal telemetry is unavailable: " + method.getName());
-        }));
+        ArtThermal thermal=new ArtThermal();
+        cache.put("thermalservice", service("android.os.IThermalService",thermal::call));
         cache.put("batterystats", service("com.android.internal.app.IBatteryStats", battery::stats));
         cache.put("batteryproperties", service("android.os.IBatteryPropertiesRegistrar", battery::properties));
         serviceHost = new ArtServiceHost(apk, localUser);
@@ -193,6 +197,11 @@ final class ArtServices {
         cache.put("activity", service("android.app.IActivityManager",
             (instance, method, arguments) -> {
                 switch (method.getName()) {
+                    case "addPackageDependency":
+                        if(!webView.noteDependency((String)arguments[0]) && !apk.applicationInfo.packageName.equals(arguments[0]))
+                            throw new UnsupportedOperationException("Unknown application package dependency");
+                        return null;
+                    case "setProcessStateSummary": ArtProcess.stateSummary((byte[])arguments[0]); return null;
                     // Notification permission is explicitly granted through Stone settings.
                     case "getMemoryInfo": {
                         long[] memory = ArtBoot.memoryInfo();
@@ -208,7 +217,7 @@ final class ArtServices {
                     case "checkPermission":
                     case "checkPermissionForDevice": return (Integer) arguments[2] == apk.applicationInfo.uid
                         && (arguments.length < 4 || (Integer)arguments[3] == android.content.Context.DEVICE_ID_DEFAULT)
-                        && (wifi.granted((String)arguments[0]) || "android.permission.POST_NOTIFICATIONS".equals(arguments[0])
+                        && (ArtPermissions.networkGranted(apk,(String)arguments[0]) || wifi.granted((String)arguments[0]) || "android.permission.POST_NOTIFICATIONS".equals(arguments[0])
                             && notifications != null && notifications.granted())
                             ? PackageManager.PERMISSION_GRANTED : PackageManager.PERMISSION_DENIED;
                     // Log.wtf has already logged the report. There is no system_server
@@ -271,8 +280,16 @@ final class ArtServices {
             throw new UnsupportedOperationException("ART app ops service: " + method.getName());
         }));
         ArtPermissions permissions = new ArtPermissions();
+        String defaultPermissionDevice=(String)Class.forName("android.companion.virtual.VirtualDeviceManager")
+            .getField("PERSISTENT_DEVICE_ID_DEFAULT").get(null);
         cache.put("permissionmgr", service("android.permission.IPermissionManager", (instance, method, arguments) -> {
             switch (method.getName()) {
+                case "checkPermission":
+                    return apk.applicationInfo.packageName.equals(arguments[0]) && (Integer)arguments[3]==localUser
+                        && defaultPermissionDevice.equals(arguments[2])
+                        && (ArtPermissions.networkGranted(apk,(String)arguments[1]) || wifi.granted((String)arguments[1])
+                            || ArtPermissions.NOTIFICATIONS.equals(arguments[1]) && notifications!=null && notifications.granted())
+                        ? PackageManager.PERMISSION_GRANTED:PackageManager.PERMISSION_DENIED;
                 case "getSplitPermissions": return permissions.splitPermissions((Boolean) arguments[0]);
                 case "getPermissionRequestState": return apk.applicationInfo.packageName.equals(arguments[0])
                     && (Integer) arguments[2] == android.content.Context.DEVICE_ID_DEFAULT
@@ -300,6 +317,11 @@ final class ArtServices {
                     // Stone has no Android device/profile owner or managed-user policy.
                     // This query does not grant package-install permission or bypass confirmation.
                     return false;
+                case "getApplicationRestrictionsForUser":
+                    if((Integer)arguments[1]!=localUser || !apk.applicationInfo.packageName.equals(arguments[0]))
+                        throw new SecurityException("Application restrictions are only available for the current application and user");
+                    // There is no Android device/profile owner managing this application.
+                    return new Bundle();
                 default: throw new UnsupportedOperationException("ART user service: " + method.getName());
             }
         }));
@@ -327,7 +349,12 @@ final class ArtServices {
         cache.put("package", service("android.content.pm.IPackageManager", (instance, method, arguments) -> {
             String name = method.getName();
             switch (name) {
+                case "notifyPackageUse":
+                    if(!webView.noteDependency((String)arguments[0]) && !apk.applicationInfo.packageName.equals(arguments[0]))
+                        throw new UnsupportedOperationException("Unknown package usage dependency");
+                    return null;
                 case "hasSystemFeature": return wifi.hasFeature((String)arguments[0],(Integer)arguments[1])
+                    || webView.supported() && PackageManager.FEATURE_WEBVIEW.equals(arguments[0]) && (Integer)arguments[1]<=0
                     || hasAudio && PackageManager.FEATURE_AUDIO_OUTPUT.equals(arguments[0]) && (Integer)arguments[1]<=0;
                 case "getSystemAvailableFeatures": return method.getReturnType().getConstructor(List.class).newInstance(availableFeatures);
                 case "getPackageInstaller": return installer.queryLocalInterface(installerDescriptor);
@@ -335,12 +362,16 @@ final class ArtServices {
                 case "canRequestPackageInstalls": return apk.applicationInfo.packageName.equals(arguments[0])
                     && (Integer) arguments[1] == localUser && packageInstaller.canRequestInstalls();
                 case "getInstallerPackageName": {
+                    if(webView.packageInfo((String)arguments[0],0)!=null) return null;
                     String[] source = packages.installSource((String) arguments[0]);
                     if (source == null) throw new IllegalArgumentException("Unknown package: " + arguments[0]);
                     return source[0];
                 }
                 case "getInstallSourceInfo": {
                     if ((Integer) arguments[1] != localUser) return null;
+                    if(webView.packageInfo((String)arguments[0],0)!=null)
+                        return InstallSourceInfo.class.getConstructor(String.class,SigningInfo.class,String.class,String.class,String.class,int.class)
+                            .newInstance(null,null,null,null,null,PackageInstaller.PACKAGE_SOURCE_UNSPECIFIED);
                     String[] source = packages.installSource((String) arguments[0]);
                     if (source == null) return null;
                     String installing = source[0];
@@ -350,22 +381,22 @@ final class ArtServices {
                 }
                 case "getInstalledPackages":
                     return method.getReturnType().getConstructor(List.class).newInstance((Integer) arguments[1] == localUser
-                        ? packages.all(((Number) arguments[0]).longValue()) : Collections.emptyList());
+                        ? allPackages(((Number) arguments[0]).longValue()) : Collections.emptyList());
                 case "isInstantApp": return false;
                 case "getApplicationInfo": {
                     android.content.pm.PackageInfo info = (Integer) arguments[2] == localUser
-                        ? packages.get((String) arguments[0], ((Number) arguments[1]).longValue()) : null;
+                        ? packageInfo((String) arguments[0], ((Number) arguments[1]).longValue()) : null;
                     return info == null ? null : info.applicationInfo;
                 }
                 case "getPackageInfo": return (Integer) arguments[2] == localUser
-                    ? packages.get((String) arguments[0], ((Number) arguments[1]).longValue()) : null;
+                    ? packageInfo((String) arguments[0], ((Number) arguments[1]).longValue()) : null;
                 case "getPackagesForUid": {
-                    String[] names = packages.all(0).stream().filter(info -> info.applicationInfo.uid == (Integer) arguments[0])
+                    String[] names = allPackages(0).stream().filter(info -> info.applicationInfo.uid == (Integer) arguments[0])
                         .map(info -> info.packageName).toArray(String[]::new);
                     return names.length == 0 ? null : names;
                 }
                 case "getPackageUid": {
-                    android.content.pm.PackageInfo info = (Integer) arguments[2] == localUser ? packages.get((String) arguments[0], 0) : null;
+                    android.content.pm.PackageInfo info = (Integer) arguments[2] == localUser ? packageInfo((String) arguments[0], 0) : null;
                     return info == null ? -1 : info.applicationInfo.uid;
                 }
                 case "getComponentEnabledSetting": return apk.components.get((ComponentName) arguments[0]);
@@ -419,7 +450,18 @@ final class ArtServices {
                     (Integer) arguments[3] == localUser
                         ? apk.queryServices(resolvedIntent((Intent)arguments[0],(String)arguments[1]),((Number)arguments[2]).longValue())
                         : Collections.emptyList());
-                case "getServiceInfo": return componentInfo(apk, ServiceInfo.class, arguments);
+                case "getServiceInfo": {
+                    if((Integer)arguments[2]!=localUser) return null;
+                    ComponentName component=(ComponentName)arguments[0];
+                    android.content.pm.PackageInfo image=webView.packageInfo(component.getPackageName(),
+                        ((Number)arguments[1]).longValue()|PackageManager.GET_SERVICES);
+                    if(image!=null && image.services!=null) for(ServiceInfo info:image.services)
+                        if(component.getClassName().equals(info.name)) {
+                            boolean enabled=image.applicationInfo.enabled && info.enabled;
+                            return enabled || (((Number)arguments[1]).longValue()&PackageManager.MATCH_DISABLED_COMPONENTS)!=0?info:null;
+                        }
+                    return componentInfo(apk, ServiceInfo.class, arguments);
+                }
                 case "getReceiverInfo": {
                     if ((Integer) arguments[2] != localUser) return null;
                     ComponentName receiverName = (ComponentName) arguments[0];
@@ -446,6 +488,36 @@ final class ArtServices {
                 default: throw new UnsupportedOperationException("ART package service: " + name);
             }
         }));
+    }
+
+    static void initializeWebView(android.app.Application application,ArtPackage apk) throws ReflectiveOperationException {
+        webView.initialize(application,apk);
+        if(webView.supported()) {
+            android.content.pm.FeatureInfo info=new android.content.pm.FeatureInfo(); info.name=PackageManager.FEATURE_WEBVIEW;
+            features.add(info);
+        }
+        Class<?> type=Class.forName("android.content.pm.SystemFeaturesCache");
+        Object cache=type.getConstructor(java.util.Collection.class).newInstance(features);
+        java.lang.reflect.Field versions=type.getDeclaredField("mSdkFeatureVersions"); versions.setAccessible(true);
+        int[] current=(int[])versions.get(frameworkFeatureCache), updated=(int[])versions.get(cache);
+        if(current.length!=updated.length) throw new IllegalStateException("System feature cache size changed");
+        System.arraycopy(updated,0,current,0,current.length);
+        Class<?> sharedType=Class.forName("com.android.internal.os.ApplicationSharedMemory");
+        Object shared=sharedType.getMethod("getInstance").invoke(null);
+        sharedType.getMethod("writeSystemFeaturesCache",int[].class).invoke(shared,type.getMethod("getSdkFeatureVersions").invoke(cache));
+    }
+
+    private static android.content.pm.PackageInfo packageInfo(String name,long flags) throws java.io.IOException {
+        android.content.pm.PackageInfo image=webView.packageInfo(name,flags);
+        return image==null?packages.get(name,flags):image;
+    }
+
+    private static List<android.content.pm.PackageInfo> allPackages(long flags) throws java.io.IOException {
+        List<android.content.pm.PackageInfo> result=packages.all(flags);
+        if(webView.supported()) {
+            result.add(webView.packageInfo(webView.packageName(),flags));
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -531,17 +603,18 @@ final class ArtServices {
     }
 
     static Object initializeFrameworkState() throws ReflectiveOperationException {
-        return initializeFrameworkState(Collections.emptyList());
+        return initializeFrameworkState(Collections.emptyList(),false);
     }
 
-    private static Object initializeFrameworkState(java.util.Collection<android.content.pm.FeatureInfo> available) throws ReflectiveOperationException {
+    private static Object initializeFrameworkState(java.util.Collection<android.content.pm.FeatureInfo> available,boolean deferFeatures) throws ReflectiveOperationException {
         Class<?> sharedType = Class.forName("com.android.internal.os.ApplicationSharedMemory");
         Object shared = sharedType.getMethod("create").invoke(null);
         sharedType.getMethod("setInstance", sharedType).invoke(null, shared);
         Class<?> features = Class.forName("android.content.pm.SystemFeaturesCache");
         Object featureCache = features.getConstructor(java.util.Collection.class).newInstance(available);
         features.getMethod("setInstance", features).invoke(null, featureCache);
-        sharedType.getMethod("writeSystemFeaturesCache", int[].class).invoke(shared,
+        frameworkFeatureCache=featureCache;
+        if(!deferFeatures) sharedType.getMethod("writeSystemFeaturesCache", int[].class).invoke(shared,
             features.getMethod("getSdkFeatureVersions").invoke(featureCache));
         return shared;
     }
@@ -564,7 +637,13 @@ final class ArtServices {
                     case "toString": return "Stone local " + descriptor;
                     case "hashCode": return System.identityHashCode(instance);
                     case "equals": return instance == arguments[0];
-                    default: return handler.invoke(instance, method, arguments);
+                    default:
+                        try { return handler.invoke(instance, method, arguments); }
+                        catch(Throwable error) {
+                            if(Boolean.getBoolean("stone.diagnostics"))
+                                android.util.Log.e("StoneBinder",descriptor+"."+method.getName(),error);
+                            throw error;
+                        }
                 }
             });
         binder.attachInterface(service, descriptor);

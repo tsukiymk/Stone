@@ -1124,6 +1124,27 @@ void* LoadArtDex2Oat()
     return MakeNativeAndroidThunk(main, "(IL)I");
 }
 
+void SetArtPrivateLibraryRoot(const std::filesystem::path& dataDirectory, std::string_view guestData)
+{
+    auto& state = Process();
+    const std::lock_guard lock(state.mutex);
+    auto& scope = state.runtime;
+    if (!scope.artRuntime || !scope.read || state.translate)
+        throw std::runtime_error("private native libraries currently require x64 image ART");
+    const auto prefix = std::string(guestData) + "/";
+    if (!scope.applicationDataPrefix.empty()) {
+        if (scope.applicationDataPrefix != prefix)
+            throw std::runtime_error("private native library data identity changed");
+        return;
+    }
+    const auto imageReader = scope.read;
+    const auto privateRoot = std::filesystem::canonical(dataDirectory);
+    scope.read = [imageReader, privateRoot, prefix](const std::string& name) {
+        return name.starts_with(prefix) ? ReadAndroidPrivateLibrary(privateRoot, prefix, name) : imageReader(name);
+    };
+    scope.applicationDataPrefix = prefix;
+}
+
 void SetArtApplicationLibraries(const std::filesystem::path& directory, const std::filesystem::path& dataDirectory,
                                 std::string_view guestData)
 {

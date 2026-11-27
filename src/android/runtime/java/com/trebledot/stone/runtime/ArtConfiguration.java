@@ -186,6 +186,8 @@ public final class ArtConfiguration {
             apk.resources.updateConfiguration(config, metrics);
         } catch (ReflectiveOperationException error) { throw new IllegalStateException("Could not apply ART configuration", error); }
         Resources.getSystem().updateConfiguration(config, metrics);
+        if(ArtServices.display!=null) try { ArtServices.display.configurationChanged(config); }
+        catch(ReflectiveOperationException error) { throw new IllegalStateException("Could not update window context configuration",error); }
         if(apk!=null) try {
             // Compose's cached text images already contain density-scaled
             // pixels. New bitmap defaults must match the drawing Canvas so
