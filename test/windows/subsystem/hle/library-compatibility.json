@@ -1,5 +1,15 @@
 {
   "system": {
+    "libnativewindow.so": [
+      {
+        "abi": "x86_64",
+        "version": "37",
+        "versionSource": "android-api",
+        "source": "Official AOSP API 37.0 default x86_64 revision 6 system image (x86_64-37.0_r06.zip), /system/lib64/libnativewindow.so; original ABI identity for the Windows NDK bridge",
+        "sha256": "2a4ab2a35b1585dbec44c072b3aa85c151579b6161caac51d93904f36275d4e6",
+        "compatibility": null
+      }
+    ],
     "libc.so": [
       {
         "abi": "x86_64",
@@ -7,7 +17,11 @@
         "versionSource": "android-api",
         "source": "Official AOSP API 37.0 default x86_64 revision 6 system image (x86_64-37.0_r06.zip), /apex/com.android.runtime/lib64/bionic/libc.so; Windows Bionic bridge",
         "sha256": "5f6411b3593f045c008b4003d824a5fbde289d7c4f58bc6fa9836b3ea3f92f79",
-        "compatibility": null
+        "compatibility": {
+          "minVersion": "37",
+          "maxVersion": "37",
+          "scope": ["hle-condition-notifications-across-signal-poll-deadlines"]
+        }
       }
     ],
     "libEGL.so": [
@@ -86,6 +100,7 @@
         "version": "37",
         "versionSource": "android-api",
         "sha256": "ff73b7b105ad182a46b6eeb6c33a3c8312136454e37b0a94a34e89f05412057d",
+        "source": "Official AOSP API 37.0 default x86_64 revision 6 system image (x86_64-37.0_r06.zip), /system/lib64/libandroid.so; image NDK assets and Windows ALooper bridge",
         "compatibility": {
           "minVersion": "37",
           "maxVersion": "37",
@@ -94,7 +109,10 @@
             "read-seek-length-remaining",
             "directory-rewind",
             "uncompressed-fd-pread",
-            "configuration-density-and-screen-dp"
+            "configuration-density-and-screen-dp",
+            "hle-looper-ready-callback-batch",
+            "hle-looper-socket-readiness",
+            "hle-looper-callback-registration-replacement"
           ]
         }
       }

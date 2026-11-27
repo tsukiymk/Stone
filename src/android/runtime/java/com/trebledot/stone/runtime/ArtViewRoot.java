@@ -112,11 +112,19 @@ final class ArtViewRoot implements AutoCloseable {
             if (root == null) return;
             Object info = field(root, "mAttachInfo").get(root);
             field(info, "mHasWindowFocus").setBoolean(info, focused);
+            Object ime = field(root, "mImeFocusController").get(root);
+            android.view.WindowManager.LayoutParams attributes =
+                (android.view.WindowManager.LayoutParams) field(root, "mWindowAttributes").get(root);
+            invoke(ime.getClass(), ime, "onPreWindowFocus",
+                new Class<?>[]{boolean.class, android.view.WindowManager.LayoutParams.class}, focused, attributes);
             view.dispatchWindowFocusChanged(focused);
             // Compose observes window focus through the tree observer rather
             // than only View.onWindowFocusChanged (caret and selection UI).
             invoke(android.view.ViewTreeObserver.class, view.getViewTreeObserver(),
                 "dispatchOnWindowFocusChange", new Class<?>[]{boolean.class}, focused);
+            invoke(ime.getClass(), ime, "onPostWindowFocus",
+                new Class<?>[]{View.class, boolean.class, android.view.WindowManager.LayoutParams.class},
+                view.findFocus(), focused, attributes);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Could not change ART window focus", error);
         }
@@ -233,14 +241,19 @@ final class ArtViewRoot implements AutoCloseable {
         surfaces.close();
         try { invoke(View.class, view, "dispatchDetachedFromWindow", new Class<?>[0]); }
         finally {
-            try { invoke(View.class, view, "assignParent", new Class<?>[]{ViewParent.class}, (Object) null); }
-            finally {
-                field(root, "mView").set(root, null);
-                field(info, "mRootView").set(info, null);
-                releaseLayer();
-                attached = false;
-                ArtServices.windows.unregisterActivityRoot(activity, this);
-                unregisterGlobalRoot();
+            try {
+                Object ime = field(root, "mImeFocusController").get(root);
+                invoke(ime.getClass(), ime, "onWindowDismissed", new Class<?>[0]);
+            } finally {
+                try { invoke(View.class, view, "assignParent", new Class<?>[]{ViewParent.class}, (Object) null); }
+                finally {
+                    field(root, "mView").set(root, null);
+                    field(info, "mRootView").set(info, null);
+                    releaseLayer();
+                    attached = false;
+                    ArtServices.windows.unregisterActivityRoot(activity, this);
+                    unregisterGlobalRoot();
+                }
             }
         }
     }

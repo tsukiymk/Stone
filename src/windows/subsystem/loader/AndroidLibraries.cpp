@@ -285,8 +285,12 @@ Library& Prepare(LibraryNamespace& scope, const std::string& name, const Android
                 !scope.images.contains(dependency) && !staged.contains(dependency))
                 InstallNativeImageZlib(read);
             const auto system = SystemLibraryIndex(dependency);
-            const bool useImage =
-                (scope.imageMath && dependency == "libm.so") || (scope.imageLog && dependency == "liblog.so");
+            const bool useImage = (scope.imageMath && dependency == "libm.so") ||
+                                  (scope.imageLog && dependency == "liblog.so") ||
+                                  // libgui/HWUI exchange image-owned GraphicBuffer objects through
+                                  // their private dependency. Public dlopen handles still use the
+                                  // NDK bridge so host buffers never enter that image ABI.
+                                  (scope.artRuntime && dependency == "libnativewindow.so");
             if (system != SystemLibraryCount && !useImage) {
                 // Resolve platform imports to the existing host bridge. The
                 // translated leaf backend still rejects calls into those imports.

@@ -275,17 +275,22 @@ int SetTimer(int fd, int flags, const TimerSpec* spec, TimerSpec* old)
 }
 
 struct Registration {
-    int fd, ident;
+    int fd, ident, events;
     uintptr_t callback;
     void* data;
     std::shared_ptr<Timer> timer;
     std::shared_ptr<EventCounter> counter;
+    uint64_t socket;
+    uint64_t sequence;
 };
 
 struct Looper {
     HANDLE wake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
     std::mutex mutex;
     std::vector<Registration> registrations;
+    std::vector<Registration> responses;
+    size_t responseIndex = 0;
+    uint64_t nextSequence = 0;
     bool allowNonCallbacks;
     bool skipEmptyZeroTimeout = false;
     unsigned refs = 1;
@@ -328,12 +333,15 @@ int AddFd(Looper* looper, int fd, int ident, int events, uintptr_t callback, voi
 {
     auto timer = FindTimer(fd);
     auto counter = timer ? nullptr : FindEventCounter(fd);
-    if (!looper || (!timer && !counter) || events != Input || (!callback && (ident < 0 || !looper->allowNonCallbacks)))
+    const auto socket = AndroidSocketId(fd);
+    if (!looper || (!timer && !counter && !socket) || (events & ~0x1f) ||
+        (!callback && (ident < 0 || !looper->allowNonCallbacks)))
         return -1;
     const std::lock_guard lock(looper->mutex);
     auto& list = looper->registrations;
     const auto it = std::ranges::find(list, fd, &Registration::fd);
-    Registration registration{fd, ident, callback, data, std::move(timer), std::move(counter)};
+    Registration registration{
+        fd, ident, events, callback, data, std::move(timer), std::move(counter), socket, ++looper->nextSequence};
     if (it != list.end())
         *it = std::move(registration);
     else {
@@ -362,6 +370,26 @@ int RemoveFd(Looper* looper, int fd)
     return 1;
 }
 
+int LooperReadiness(const Registration& entry)
+{
+    uint32_t ready = 0;
+    const uint32_t requested = ((entry.events & 1) ? Input : 0) | ((entry.events & 2) ? Output : 0);
+    if (entry.socket) {
+        uint32_t previous = 0;
+        uint64_t reads = 0, writes = 0;
+        ready = PollAndroidSocket(entry.fd, entry.socket, requested, previous, reads, writes);
+    }
+    else if (entry.counter) {
+        const std::lock_guard lock(entry.counter->mutex);
+        ready = EventCounterReadiness(*entry.counter) & requested;
+    }
+    else if (entry.timer && (requested & Input) && WaitForSingleObject(entry.timer->event, 0) == WAIT_OBJECT_0)
+        ready = Input;
+    // NDK ALooper uses different bit values from poll/epoll after INPUT.
+    return ((ready & Input) ? 1 : 0) | ((ready & Output) ? 2 : 0) | ((ready & 8) ? 4 : 0) |
+           ((ready & (16 | 0x2000)) ? 8 : 0);
+}
+
 int PollOnce(int timeout, int* fd, int* events, void** data)
 {
     if (fd)
@@ -373,6 +401,28 @@ int PollOnce(int timeout, int* fd, int* events, void** data)
     const auto looper = threadLooper.get();
     if (!looper)
         return PollError;
+    const auto response = [&]() {
+        while (looper->responseIndex < looper->responses.size()) {
+            const auto entry = looper->responses[looper->responseIndex++];
+            const std::lock_guard lock(looper->mutex);
+            if (std::ranges::none_of(looper->registrations, [&](const auto& current) {
+                    return current.sequence == entry.sequence;
+                }))
+                continue;
+            if (fd)
+                *fd = entry.fd;
+            if (events)
+                *events = entry.events;
+            if (data)
+                *data = entry.data;
+            return entry.ident;
+        }
+        looper->responses.clear();
+        looper->responseIndex = 0;
+        return PollWake;
+    };
+    if (const int pending = response(); pending >= 0)
+        return pending;
     std::vector<Registration> registrations;
     bool skipEmptyZeroTimeout = false;
     try {
@@ -388,33 +438,80 @@ int PollOnce(int timeout, int* fd, int* events, void** data)
         return ready == WAIT_OBJECT_0 ? PollWake : ready == WAIT_TIMEOUT ? PollTimeout : PollError;
     }
     HANDLE handles[MAXIMUM_WAIT_OBJECTS]{looper->wake};
-    for (size_t i = 0; i < registrations.size(); ++i) {
-        const auto& entry = registrations[i];
-        handles[i + 1] = entry.timer ? entry.timer->event : entry.counter->event;
+    DWORD count = 1;
+    bool pollReadiness = false;
+    for (const auto& entry : registrations) {
+        if (entry.socket)
+            pollReadiness = true;
+        else if (entry.events & Input)
+            handles[count++] = entry.timer ? entry.timer->event : entry.counter->event;
+        if (entry.counter && (entry.events & 2))
+            pollReadiness = true;
     }
-    const auto count = static_cast<DWORD>(registrations.size() + 1);
-    const DWORD result =
-        WaitForMultipleObjects(count, handles, FALSE, timeout < 0 ? INFINITE : static_cast<DWORD>(timeout));
-    if (result == WAIT_TIMEOUT)
-        return PollTimeout;
-    if (result == WAIT_OBJECT_0)
-        return PollWake;
-    if (result >= WAIT_OBJECT_0 + count)
+    // Android dispatches the entire ready callback batch before returning to
+    // Java, even when its wake pipe was signaled too. A Java frame callback can
+    // synchronously depend on work queued on these native descriptors.
+    std::vector<Registration> callbacks;
+    try {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(0, timeout));
+        bool woken = false;
+        for (;;) {
+            woken |= WaitForSingleObject(looper->wake, 0) == WAIT_OBJECT_0;
+            for (auto entry : registrations) {
+                entry.events = LooperReadiness(entry);
+                if (!entry.events)
+                    continue;
+                if (entry.callback)
+                    callbacks.push_back(std::move(entry));
+                else
+                    looper->responses.push_back(std::move(entry));
+            }
+            if (woken || !callbacks.empty() || !looper->responses.empty())
+                break;
+            DWORD delay = INFINITE;
+            if (timeout >= 0) {
+                const auto remaining =
+                    std::chrono::ceil<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now());
+                if (remaining.count() <= 0)
+                    return PollTimeout;
+                delay = static_cast<DWORD>(remaining.count());
+            }
+            // Socket readiness shares the existing poll/epoll backend. Keep
+            // the native event wait for counter/timer-only Loopers.
+            if (pollReadiness)
+                delay = std::min<DWORD>(delay, 1);
+            const DWORD result = WaitForMultipleObjects(count, handles, FALSE, delay);
+            if (result == WAIT_OBJECT_0)
+                woken = true;
+            else if (result != WAIT_TIMEOUT && result >= WAIT_OBJECT_0 + count)
+                return PollError;
+        }
+    }
+    catch (const std::bad_alloc&) {
+        looper->responses.clear();
         return PollError;
-    const auto& entry = registrations[result - WAIT_OBJECT_0 - 1];
-    if (entry.callback) {
-        if (!CallAndroidCallback(entry.callback, reinterpret_cast<void*>(static_cast<intptr_t>(entry.fd)),
-                                 reinterpret_cast<void*>(static_cast<intptr_t>(Input)), entry.data))
-            RemoveFd(looper, entry.fd);
-        return PollCallback;
     }
-    if (fd)
-        *fd = entry.fd;
-    if (events)
-        *events = Input;
-    if (data)
-        *data = entry.data;
-    return entry.ident;
+    bool called = false;
+    for (const auto& entry : callbacks) {
+        {
+            const std::lock_guard lock(looper->mutex);
+            if (std::ranges::none_of(looper->registrations, [&](const auto& current) {
+                    return current.sequence == entry.sequence;
+                }))
+                continue;
+        }
+        called = true;
+        if (!CallAndroidCallback(entry.callback, reinterpret_cast<void*>(static_cast<intptr_t>(entry.fd)),
+                                 reinterpret_cast<void*>(static_cast<intptr_t>(entry.events)), entry.data)) {
+            const std::lock_guard lock(looper->mutex);
+            std::erase_if(looper->registrations, [&](const auto& current) {
+                return current.sequence == entry.sequence;
+            });
+        }
+    }
+    if (const int pending = response(); pending >= 0)
+        return pending;
+    return called ? PollCallback : PollWake;
 }
 
 int PollAll(int timeout, int* fd, int* events, void** data)

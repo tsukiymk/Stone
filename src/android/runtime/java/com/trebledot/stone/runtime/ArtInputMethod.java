@@ -53,7 +53,16 @@ final class ArtInputMethod {
                 clients.put(((IInterface) arguments[0]).asBinder(), arguments.clone());
                 return null;
             case "startInputOrWindowGainedFocus":
-                return Class.forName("com.android.internal.inputmethod.InputBindResult").getField("NO_IME").get(null);
+                Object result=Class.forName("com.android.internal.inputmethod.InputBindResult").getField("NO_IME").get(null);
+                if(method.getReturnType()==void.class) {
+                    IInterface client=(IInterface)arguments[1];
+                    if(!clients.containsKey(client.asBinder())) throw new SecurityException("Unknown input method client");
+                    Class.forName("com.android.internal.inputmethod.IInputMethodClient")
+                        .getMethod("onStartInputResult",result.getClass(),int.class)
+                        .invoke(client,result,(Integer)arguments[arguments.length-1]);
+                    return null;
+                }
+                return result;
             case "getImeTrackerService": return null;
             case "showSoftInput":
             case "hideSoftInput": return false;

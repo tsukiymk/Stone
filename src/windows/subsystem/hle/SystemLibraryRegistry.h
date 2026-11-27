@@ -11,7 +11,7 @@ struct SystemLibrary {
     bool (*available)() = nullptr;
 };
 
-inline constexpr size_t SystemLibraryCount = 19;
+inline constexpr size_t SystemLibraryCount = 20;
 extern const std::array<SystemLibrary, SystemLibraryCount> systemLibraries;
 size_t SystemLibraryIndex(std::string_view name);
 size_t SystemLibraryPathIndex(std::string_view path);

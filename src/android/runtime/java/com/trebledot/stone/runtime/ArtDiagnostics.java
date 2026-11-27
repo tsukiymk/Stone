@@ -44,6 +44,14 @@ final class ArtDiagnostics {
                         output.write("\nuptime=" + android.os.SystemClock.uptimeMillis() + " frameDelayMs=" + delay + "\n");
                         for (StackTraceElement frame : main.getStackTrace()) output.write("  " + frame + "\n");
                     }
+                    if (samples == 0) {
+                        try (Writer output = new OutputStreamWriter(new FileOutputStream(new File(directory, "stalled-threads.txt")), StandardCharsets.UTF_8)) {
+                            for (java.util.Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+                                output.write("\n" + entry.getKey().getName() + " " + entry.getKey().getState() + "\n");
+                                for (StackTraceElement frame : entry.getValue()) output.write("  " + frame + "\n");
+                            }
+                        }
+                    }
                     samples++;
                 } catch (java.io.IOException | RuntimeException error) {
                     Log.w("StoneDiagnostics", "Could not sample software frame stall", error);
@@ -131,7 +139,8 @@ final class ArtDiagnostics {
         view.getLocationOnScreen(location);
         output.write(depth + " " + view.getClass().getName() + " id=" + view.getId()
             + " bounds=" + location[0] + "," + location[1] + "," + view.getWidth() + "," + view.getHeight()
-            + " clickable=" + view.isClickable() + " enabled=" + view.isEnabled() + " text="
+            + " clickable=" + view.isClickable() + " enabled=" + view.isEnabled()
+            + " focused=" + view.isFocused() + " windowFocus=" + view.hasWindowFocus() + " text="
             + text.replace('\n', ' ').replace('\r', ' ') + "\n");
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;

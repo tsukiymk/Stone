@@ -16,6 +16,8 @@ BitmapRegionDecoder uses the image's native decoder for cropped image regions. N
 
 Stone's NativeWindow, image queues, and HardwareBuffer cannot be mixed with image-native handles. Hardware Surface conversions, drivers, and GPU paths have separate limits. Working software pixels do not establish support for the complete Android graphics stack.
 
+Public NativeWindow and HardwareBuffer entry points obtained by `dlopen`/`dlsym` from `libnativewindow.so` share the Windows implementations used by `libandroid.so`. CPU buffer allocation retains the same handle ownership across both libraries. Image libgui/HWUI retain their image-owned NativeWindow dependency for private GraphicBuffer objects. GPU HardwareBuffer usage remains unsupported by the Windows bridge: support queries return false and allocation returns an error instead of entering the image's unavailable gralloc service. ART Surface and Java HardwareBuffer conversions retain their explicit unsupported errors.
+
 Software Surface requests for a nonzero frame rate return an unsupported status; they do not change the Windows display refresh rate. Clearing a rate succeeds because no refresh-rate vote is retained. Invalid rates and public compatibility/strategy values retain Android argument errors. Image-owned Surfaces keep the image's frame-rate implementation, while Stone handles never enter it.
 
 The Windows-backed video MediaCodecs can publish decoded pixels into a Stone software Surface queue. SurfaceView uses the software composition path. SurfaceTexture streams upload RGBA buffers to a real ANGLE external-OES texture, preserving frame timestamps and image Handler notifications; EGL14 can render back into a software Surface. Single-buffer SurfaceTexture mode is unsupported. See [audio and media](audio.md#video-mediacodec) for decoder formats and output modes.
@@ -39,6 +41,10 @@ The visible Activity's fixed portrait/landscape requests also swap the window di
 The virtual keyboard uses image `Virtual.kcm` and keylayout files. The image handles case, symbols, modifiers, and shortcut matching. Consecutive Win32 text events can reuse the current input connection, but commit characters individually and recheck the target. Focus changes or event boundaries close the connection.
 
 Left-button presses and drags emulate a single finger with SOURCE_TOUCHSCREEN and TOOL_TYPE_FINGER, including release and capture cancellation. Right-button gestures and wheel events retain mouse semantics. Focus notifies both View and ViewTreeObserver; the image editor draws cursors and editing menus. Removing a child window dispatches detach and releases its input resources.
+
+Software roots also notify the image ImeFocusController before and after window focus changes and when the window is dismissed. This lets WebView editors establish their image input connections. The local input-method service returns the image's NO_IME result, including the matching sequence callback on images with asynchronous input startup; it does not advertise an Android keyboard engine.
+
+The Windows Looper dispatches all ready native descriptor callbacks before returning to Java, including when a queue wake is ready at the same time. Socket read, write, error, and hangup readiness uses the NDK Looper event flags alongside event counters and timers. Ready descriptors without callbacks retain their individual identifiers across polls. A callback that replaces its own descriptor registration does not remove the replacement when it returns zero.
 
 Committed UTF-16 text is distinct from the complete IME composition process. Windows IME pre-edit text, candidate windows, multitouch, and full keyboard layout/device capabilities remain limited.
 

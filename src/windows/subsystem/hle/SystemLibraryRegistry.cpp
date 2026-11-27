@@ -53,6 +53,12 @@ const std::array<SystemLibrary, SystemLibraryCount> systemLibraries{{
      }},
     {"libvulkan.so", Libvulkan, WindowsArm64VulkanAvailable},
     {"libz.so", Libz, NativeImageZlibLoaded},
+    {"libnativewindow.so",
+     [](std::string_view name) -> uintptr_t {
+         // Both public NDK libraries must share the same opaque host handles.
+         // Loading image libnativewindow would enter its unavailable gralloc HAL.
+         return name.starts_with("AHardwareBuffer_") || name.starts_with("ANativeWindow_") ? Libandroid(name) : 0;
+     }},
 }};
 
 size_t SystemLibraryIndex(std::string_view name)
@@ -80,7 +86,10 @@ size_t SystemLibraryPathIndex(std::string_view path)
 uintptr_t LookupHleSystemSymbol(const SystemLibrary& library, std::string_view symbol, SystemSymbolContext context)
 {
     uintptr_t address = 0;
-    if (context.artRuntime && library.name == "libandroid.so")
+    if (library.name == "libnativewindow.so" && !symbol.starts_with("AHardwareBuffer_") &&
+        !symbol.starts_with("ANativeWindow_"))
+        return 0;
+    if (context.artRuntime && (library.name == "libandroid.so" || library.name == "libnativewindow.so"))
         address = ArtFrameworkImport(symbol);
     // Keep the selected image's assets and ART-specific JNI adapters ahead of
     // the standalone ARM64 configuration/legacy host providers.

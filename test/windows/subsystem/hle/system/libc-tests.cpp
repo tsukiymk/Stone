@@ -1561,6 +1561,64 @@ void TestLibcEnvironment(Suite& suite, std::wstring_view first)
 void TestLibc(Suite& suite, int api)
 {
     TestLogAndMath(suite);
+    suite.Run("libc-condition-notifications-across-signal-poll-deadlines", [] {
+        const auto mutexInit = Guest<int (*)(void*, const void*)>(Libc("pthread_mutex_init"), "(LL)I");
+        const auto lock = Guest<int (*)(void*)>(Libc("pthread_mutex_lock"), "(L)I");
+        const auto unlock = Guest<int (*)(void*)>(Libc("pthread_mutex_unlock"), "(L)I");
+        const auto mutexDestroy = Guest<int (*)(void*)>(Libc("pthread_mutex_destroy"), "(L)I");
+        const auto init = Guest<int (*)(int*, const int64_t*)>(Libc("pthread_cond_init"), "(LL)I");
+        const auto signal = Guest<int (*)(int*)>(Libc("pthread_cond_signal"), "(L)I");
+        const auto broadcast = Guest<int (*)(int*)>(Libc("pthread_cond_broadcast"), "(L)I");
+        const auto wait = Guest<int (*)(int*, void*, const AndroidTimespec*)>(Libc("pthread_cond_timedwait"), "(LLL)I");
+        const auto destroy = Guest<int (*)(int*)>(Libc("pthread_cond_destroy"), "(L)I");
+        std::array<int64_t, 5> mutex{};
+        std::array<int, 12> condition{};
+        const int64_t monotonic = 2;
+        STONE_CHECK(mutexInit(mutex.data(), nullptr) == 0 && init(condition.data(), &monotonic) == 0);
+        STONE_CHECK(signal(condition.data()) == 0); // A notification is not a stored permit.
+        std::atomic<unsigned> requested{0};
+        std::atomic<bool> finished{false};
+        unsigned completed = 0;
+        int waited = 0, produced = 0, initialTimeout = 0;
+        std::thread consumer([&] {
+            RegisterNativeSignalThread();
+            waited = lock(mutex.data());
+            AndroidTimespec deadline{};
+            AndroidClock(1, &deadline);
+            ++deadline.seconds;
+            initialTimeout = wait(condition.data(), mutex.data(), &deadline);
+            for (unsigned round = 1; round <= 256 && waited == 0; ++round) {
+                AndroidClock(1, &deadline);
+                deadline.seconds += 2;
+                requested.store(round);
+                while (completed < round && waited == 0)
+                    waited = wait(condition.data(), mutex.data(), &deadline);
+            }
+            if (const int released = unlock(mutex.data()))
+                waited = released;
+            finished.store(true);
+        });
+        for (unsigned round = 1; round <= 256; ++round) {
+            while (requested.load() < round && !finished.load())
+                std::this_thread::yield();
+            if (finished.load())
+                break;
+            // Straddle the 10 ms signal-poll boundary with real guest notifications.
+            std::this_thread::sleep_for(std::chrono::microseconds((round % 21) * 500));
+            produced = lock(mutex.data());
+            if (produced)
+                break;
+            completed = round;
+            produced = (round % 2 ? signal : broadcast)(condition.data());
+            if (const int released = unlock(mutex.data()))
+                produced = released;
+            if (produced)
+                break;
+        }
+        consumer.join();
+        STONE_CHECK(destroy(condition.data()) == 0 && mutexDestroy(mutex.data()) == 0);
+        STONE_CHECK(initialTimeout == 110 && waited == 0 && produced == 0 && completed == 256);
+    });
     suite.Run("libc-art-allocation-accounting", CheckArtAllocationAccounting);
     suite.Run("libc-sigchld-registration-for-java-processes", [] {
         const auto action =

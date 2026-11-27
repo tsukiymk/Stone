@@ -20,7 +20,7 @@ Shared Windows audio, graphics, file, and Shell operations belong to `src/window
 
 ## Loading, exports, and ABI
 
-`SystemLibraryRegistry` manages module order, dynamic availability, path aliases, and context-aware queries. Symbol selection proceeds through ART's `libandroid` framework adaptation, special ARM64 exports (including libc data, libm fenv, logging, configuration, and media), module host queries, and ARM64 libc function fallback. Loading coordination registers ARM64 import names with nonzero addresses. Queries must distinguish data symbols, indirect resolvers, and specialized call bridges; they cannot be reduced to a context-free function-address table.
+`SystemLibraryRegistry` manages module order, dynamic availability, path aliases, and context-aware queries. Symbol selection proceeds through ART's `libandroid` and public `libnativewindow` framework adaptation, special ARM64 exports (including libc data, libm fenv, logging, configuration, and media), module host queries, and ARM64 libc function fallback. Loading coordination registers ARM64 import names with nonzero addresses. Queries must distinguish data symbols, indirect resolvers, and specialized call bridges; they cannot be reduced to a context-free function-address table.
 
 `AndroidSymbolResolver` preserves global scope, breadth-first dependency order, image logging policy, and Bionic unwind fallback. `AndroidLibraries` owns a single process state and recursive loading lock. `AndroidCallBridge`, `LibraryJni`, `LibraryIntegration`, `Arm64LibraryBridge`, and exception entry points cooperate through private `AndroidLibraryState`, without duplicating namespaces, JNI registration records, or code publication generations.
 
@@ -55,6 +55,8 @@ Faults/abort, startup failures, external forced termination, and other abnormal 
 ART, the framework, and directly usable Android native libraries come from the selected image. Host bridges provide Windows file, thread, networking, signal, handle, window, and device semantics. Matching export names do not justify replacing or removing a bridge: symbol selection must preserve loading scope, ABI, ownership, and the actual calling convention.
 
 The libc bridge initializes the host's narrow environment before exposing it to image code. Native x64 `environ`, `getenv`, `setenv`, and `unsetenv` share the CRT's live storage; ARM64 receives a guest-owned environment snapshot.
+
+The pthread condition-variable bridge records notifications across its internal signal and clock polling intervals. A Windows timed wait can report a timeout when a notification arrives at the same deadline; the bridge checks the notification sequence before waiting again, so an untimed Android wait cannot lose that wakeup.
 
 NDK Bitmap uses image libjnigraphics.so; assets and configuration use image libandroid.so. Stone's software image queues, NativeWindow, and HardwareBuffer cannot be mixed with image-native handles. Unconnected Java Surface/HardwareBuffer conversions fail explicitly.
 

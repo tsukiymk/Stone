@@ -491,6 +491,7 @@ int MutexUnlock(void* address)
 struct Condition {
     std::mutex mutex;
     std::condition_variable cv;
+    uint64_t generation = 0;
 };
 
 std::unordered_map<void*, std::unique_ptr<Condition>> conditions;
@@ -527,6 +528,7 @@ int CondNotify(int* address, bool broadcast)
 {
     auto& condition = GuestCondition(address);
     const std::lock_guard guard(condition.mutex);
+    ++condition.generation;
     if (broadcast)
         condition.cv.notify_all();
     else
@@ -552,6 +554,7 @@ int CondClockWait(int* address, void* mutex, int clock, const AndroidTimespec* t
     // Pair the condition's notification lock with the guest unlock so a
     // signal sent after the unlock cannot slip past wait registration.
     std::unique_lock lock(condition->mutex);
+    const auto generation = condition->generation;
     guestMutex->lock.unlock();
     int result = 0;
     if (!timeout && !signalThread.id) {
@@ -577,7 +580,10 @@ int CondClockWait(int* address, void* mutex, int clock, const AndroidTimespec* t
             }
             if (signalThread.id)
                 delay = std::min(delay, std::chrono::nanoseconds(std::chrono::milliseconds(SignalWaitSlice)));
-            if (condition->cv.wait_for(lock, delay) != std::cv_status::timeout)
+            // wait_for may report timeout even when a notification woke it at
+            // the deadline. Internal signal/wall-clock polling slices must not
+            // consume that notification and leave the guest predicate asleep.
+            if (condition->cv.wait_for(lock, delay) != std::cv_status::timeout || condition->generation != generation)
                 break;
             if (signalThread.Ready()) {
                 // A guest handler may itself need the condition. Return as a

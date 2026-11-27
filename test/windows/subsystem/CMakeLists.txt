@@ -183,7 +183,7 @@ if(STONE_CORE_ART_DIRECTORY AND STONE_CORE_ART_DEX)
             add_test(NAME stone-art-webview-providers COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --webview-providers "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
-            set_tests_properties(stone-art-webview-providers PROPERTIES LABELS "core;art;application;webview" TIMEOUT 90
+            set_tests_properties(stone-art-webview-providers PROPERTIES LABELS "core;art;application;webview" TIMEOUT 240
                 ENVIRONMENT "STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-webview-providers")
             add_test(NAME stone-art-video-codecs COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"

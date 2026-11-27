@@ -21,9 +21,11 @@ public final class WebViewRenderProbe {
     private static java.net.ServerSocket server;
     private static volatile boolean requested;
     private static volatile Throwable serverError;
-    private static final String PAGE="<!doctype html><html><head><title>Stone WebView Rendered</title><style>html,body{margin:0;background:rgb(30,150,90);height:100%}</style></head><body><h1>Android WebView</h1><div id='proof'>0</div><script>document.getElementById('proof').textContent=6*7</script></body></html>";
+    private static final String PAGE="<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'><title>Stone WebView Rendered</title><style>html,body{margin:0;background:rgb(30,150,90);min-height:2400px}input{display:block;width:200px;height:48px}button{display:block;width:120px;height:60px;margin:12px}</style></head><body><input id='editor'><button id='click' onclick='this.textContent=Number(this.textContent)+1'>0</button><div id='proof'>0</div><script>document.getElementById('proof').textContent=6*7;window.ticks=0;requestAnimationFrame(function step(){ticks++;document.getElementById('proof').style.transform='translateX('+(ticks%2)+'px)';requestAnimationFrame(step)})</script></body></html>";
     public static final class RenderActivity extends Activity {
         WebView web;
+        int loads, captures, lastAnimationTick;
+        long repeatedDrawingStarted;
         @Override public void onCreate(Bundle state) {
             super.onCreate(state); activity=this;
             System.out.println("WebView render: constructing original provider View");
@@ -37,15 +39,95 @@ public final class WebViewRenderProbe {
                     System.out.println("WebView render: onPageFinished "+url);
                     view.evaluateJavascript("document.title + ':' + document.getElementById('proof').textContent",value -> {
                         if(!"\"Stone WebView Rendered:42\"".equals(value)) throw new AssertionError("JavaScript result: "+value);
-                        new Handler().postDelayed(() -> capture(),500);
+                        if(++loads==1) new Handler().postDelayed(() -> focusEditor(),500);
+                        else if(loads==2) {
+                            web.scrollTo(0,240);
+                            web.reload();
+                        } else {
+                            web.scrollTo(0,240);
+                            new Handler().postDelayed(() -> capture(),500);
+                        }
                     });
                 }
             });
             System.out.println("WebView render: loading original provider local HTML");
             web.loadUrl("http://127.0.0.1:"+server.getLocalPort()+"/");
-            new Handler().postDelayed(() -> { if(!complete) throw new AssertionError("WebView render callback timeout"); },20000);
+            new Handler().postDelayed(() -> { if(!complete) throw new AssertionError("WebView interaction callback timeout"); },180000);
+        }
+        private void focusEditor() {
+            try {
+                // Exercise the software-window focus path without stealing desktop focus.
+                java.lang.reflect.Field field=Class.forName("com.trebledot.stone.runtime.ArtServices").getDeclaredField("windows");
+                field.setAccessible(true); Object windows=field.get(null);
+                Method focus=windows.getClass().getDeclaredMethod("focusChanged",android.view.View.class,boolean.class);
+                focus.setAccessible(true); focus.invoke(windows,getWindow().getDecorView(),true);
+            } catch(Exception error) { throw new AssertionError(error); }
+            touch(android.view.MotionEvent.ACTION_DOWN,60,24);
+            new Handler().postDelayed(() -> {
+                touch(android.view.MotionEvent.ACTION_UP,60,24);
+                new Handler().postDelayed(() -> web.evaluateJavascript("document.activeElement.id",value -> {
+                    if(!"\"editor\"".equals(value)) throw new AssertionError("DOM editor touch focus: "+value);
+                    typeText();
+                }),200);
+            },50);
+        }
+        private long touchDown;
+        private void touch(int action,float x,float y) {
+            long now=android.os.SystemClock.uptimeMillis();
+            if(action==android.view.MotionEvent.ACTION_DOWN) touchDown=now;
+            android.view.MotionEvent.PointerProperties pointer=new android.view.MotionEvent.PointerProperties();
+            pointer.id=0;pointer.toolType=android.view.MotionEvent.TOOL_TYPE_FINGER;
+            android.view.MotionEvent.PointerCoords position=new android.view.MotionEvent.PointerCoords();
+            position.x=x;position.y=y;position.size=1;
+            position.pressure=action==android.view.MotionEvent.ACTION_UP?0:1;
+            android.view.MotionEvent event=android.view.MotionEvent.obtain(touchDown,now,action,1,
+                new android.view.MotionEvent.PointerProperties[]{pointer},new android.view.MotionEvent.PointerCoords[]{position},
+                0,0,1,1,0,0,android.view.InputDevice.SOURCE_TOUCHSCREEN,0);
+            try { dispatchTouchEvent(event); } finally { event.recycle(); }
+        }
+        private void typeText() {
+            try {
+                android.view.inputmethod.InputMethodManager manager=getSystemService(android.view.inputmethod.InputMethodManager.class);
+                if(!manager.isActive(web)) throw new AssertionError("WebView editor not served by the image input focus controller");
+                Class<?> session=Class.forName("com.trebledot.stone.runtime.ArtInputMethod$TextSession");
+                java.lang.reflect.Constructor<?> constructor=session.getDeclaredConstructor();constructor.setAccessible(true);
+                Method commit=session.getDeclaredMethod("commitText",android.view.View.class,CharSequence.class);commit.setAccessible(true);
+                try(AutoCloseable connection=(AutoCloseable)constructor.newInstance()) {
+                    if(!(Boolean)commit.invoke(connection,web,"Stone42")) throw new AssertionError("WebView rejected committed Windows text");
+                }
+                new Handler().postDelayed(() -> web.evaluateJavascript("document.getElementById('editor').value",value -> {
+                    if(!"\"Stone42\"".equals(value)) throw new AssertionError("WebView text result: "+value);
+                    clickButton();
+                }),200);
+            } catch(Exception error) { throw new AssertionError(error); }
+        }
+        private void clickButton() {
+            long now=android.os.SystemClock.uptimeMillis();
+            for(int action:new int[]{android.view.MotionEvent.ACTION_DOWN,android.view.MotionEvent.ACTION_UP}) {
+                android.view.MotionEvent event=android.view.MotionEvent.obtain(now,now+40,action,60,90,0);
+                event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                try { web.dispatchTouchEvent(event); } finally { event.recycle(); }
+            }
+            new Handler().postDelayed(() -> web.evaluateJavascript("document.getElementById('click').textContent",value -> {
+                if(!"\"1\"".equals(value)) throw new AssertionError("WebView click result: "+value);
+                web.setAlpha(0.5f);
+                new Handler().postDelayed(() -> {
+                    web.setAlpha(1f);
+                    web.loadUrl("http://127.0.0.1:"+server.getLocalPort()+"/second");
+                },300);
+            }),300);
         }
         private void capture() {
+            web.evaluateJavascript("window.ticks+':'+window.scrollY",value -> {
+                String[] state=value.substring(1,value.length()-1).split(":");
+                int tick=Integer.parseInt(state[0]);
+                if(tick<=lastAnimationTick || Integer.parseInt(state[1])!=240)
+                    throw new AssertionError("WebView animation or scroll stalled: "+value);
+                lastAnimationTick=tick;
+                captureFrame();
+            });
+        }
+        private void captureFrame() {
             android.view.View decor=getWindow().getDecorView();
             android.view.WindowManager.LayoutParams params=new android.view.WindowManager.LayoutParams();
             params.copyFrom(getWindow().getAttributes());
@@ -56,13 +138,22 @@ public final class WebViewRenderProbe {
                 bitmap.eraseColor(Color.MAGENTA); web.draw(new Canvas(bitmap));
                 int pixel=bitmap.getPixel(web.getWidth()-10,web.getHeight()-10);
                 if(pixel!=Color.rgb(30,150,90)) throw new AssertionError("WebView software background pixel: "+Integer.toHexString(pixel));
+                long now=android.os.SystemClock.uptimeMillis();
+                if(repeatedDrawingStarted==0) repeatedDrawingStarted=now;
+                long drawingMillis=now-repeatedDrawingStarted;
+                if(++captures%50==0) System.out.println("WebView render: captures="+captures+" ticks="+lastAnimationTick+" drawingMs="+drawingMillis);
+                if(captures<20 || drawingMillis<60000) {
+                    web.invalidate();
+                    new Handler().postDelayed(() -> capture(),100);
+                    return;
+                }
                 File output=new File("/data/webview-render");
                 if(!output.isDirectory() && !output.mkdirs()) throw new AssertionError("WebView render output directory");
                 try(FileOutputStream file=new FileOutputStream(new File(output,"frame.png"))) {
                     if(!bitmap.compress(Bitmap.CompressFormat.PNG,100,file)) throw new AssertionError("WebView frame encoding");
                 }
                 complete=true;
-                System.out.println("PASS original WebView loopback HTTP, JavaScript=42, onPageFinished, window layout update and software pixels");
+                System.out.println("PASS original WebView HTTP, JavaScript, input focus, committed text, touch click, alpha drawing, navigation, reload, scroll and repeated software pixels: captures="+captures+" drawingMs="+drawingMillis);
                 finish();
             } catch(java.io.IOException error) { throw new AssertionError(error); }
             finally { bitmap.recycle(); }
