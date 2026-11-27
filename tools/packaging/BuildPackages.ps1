@@ -12,6 +12,20 @@ $work = New-PackageWorkDirectory $config
 $payload = Join-Path $work 'payload'
 $settings = Join-Path $payload 'settings'
 New-Item -ItemType Directory -Path $settings -Force | Out-Null
+# Reuse the same CMake component as developer builds, directly from the
+# configured imported targets rather than collecting arbitrary runtime DLLs.
+$cmake = Resolve-PackageTool $config.cmake 'cmake.exe'
+Invoke-PackageTool $cmake @('--install', $config.buildDirectory, '--config', $config.configuration,
+    '--prefix', $payload, '--component', 'stone-graphics')
+foreach ($name in @('libEGL.dll', 'libGLESv2.dll', 'd3dcompiler_47.dll')) {
+    Assert-PackageBinary (Join-Path $payload "$name") $config.architecture
+}
+foreach ($name in @('LICENSE', 'vcpkg.spdx.json',
+        'zlib.txt', 'egl-registry.txt', 'opengl-registry.txt')) {
+    if (!(Get-Item -LiteralPath (Join-Path $payload "licenses/angle/$name")).Length) {
+        throw "Empty graphics notice: $name"
+    }
+}
 
 # Publish into a fresh directory: a Build output may contain obj/, old assemblies,
 # diagnostics, or files from a previous non-AOT publish.
@@ -31,12 +45,19 @@ foreach ($required in @('StoneSettings.exe', 'StoneSettings.pri', 'App.xbf', 'Vi
         throw "Incomplete settings publication: $required"
     }
 }
-$files = @('StoneService.exe', 'StoneClient.exe', 'stone-art-runtime.jar', 'StoneImageTool.exe', 'THIRD_PARTY_NOTICES.txt', 'licenses')
+$files = @('StoneService.exe', 'StoneClient.exe', 'stone-art-runtime.jar', 'StoneImageTool.exe', 'THIRD_PARTY_NOTICES.txt')
 if ($config.architecture -eq 'x64') { $files += 'StoneArtCompiler.exe' }
 foreach ($file in $files) {
     $source = Join-Path $config.runtimeDirectory $file
     Assert-PackageTree $source
+    if ([IO.Path]::GetExtension($source) -ieq '.exe') { Assert-PackageBinary $source $config.architecture }
     Copy-Item -LiteralPath $source -Destination $payload -Recurse
+}
+New-Item -ItemType Directory -Path (Join-Path $payload 'licenses') -Force | Out-Null
+foreach ($notice in Get-ChildItem -LiteralPath (Join-Path $config.runtimeDirectory 'licenses')) {
+    if ($notice.Name -ieq 'angle') { continue }
+    Assert-PackageTree $notice.FullName
+    Copy-Item -LiteralPath $notice.FullName -Destination (Join-Path $payload 'licenses') -Recurse
 }
 Copy-Item -LiteralPath (Join-Path $config.sourceDirectory 'docs/third-party/THIRD_PARTY_NOTICES.txt') -Destination $payload -Force
 if (!$config.crt.Count) { throw 'No MSVC redistributable DLLs were found by CMake.' }

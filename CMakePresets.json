@@ -5,12 +5,20 @@
             "name": "x64",
             "generator": "Visual Studio 18 2026",
             "architecture": "x64",
-            "binaryDir": "${sourceDir}/build/${presetName}"
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+            }
         },
         {
             "name": "ARM64",
             "inherits": "x64",
-            "architecture": "ARM64"
+            "architecture": "ARM64",
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+            }
         }
     ]
 }

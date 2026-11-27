@@ -12,6 +12,7 @@
 #include "filesystem/AndroidPrivateLibraries.h"
 #include "filesystem/AndroidSystemFiles.h"
 #include "memory/GuestHeap.h"
+#include "cpu/arm64/Arm64Initializer.h"
 
 #include <array>
 #include <algorithm>
@@ -20,6 +21,7 @@
 #include <io.h>
 #include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <chrono>
@@ -1339,6 +1341,57 @@ void TestInotifyStorage(Suite& suite)
         STONE_CHECK(close(blocked) == 0);
         reader.join();
         STONE_CHECK(canceled == -1);
+    });
+}
+
+void TestLibcEnvironment(Suite& suite, std::wstring_view first)
+{
+    suite.Run("libc-environment-before-narrow-crt-initialization", [&] {
+        // wmain initializes only the wide environment. Reproduce ART's first
+        // environ access without an earlier getenv masking the startup bug.
+        STONE_CHECK(_wputenv_s(L"STONE_ENVIRONMENT_STARTUP", L"inherited") == 0);
+        STONE_CHECK(*__p__environ() == nullptr);
+        const auto checkEntries = [](char** entries) {
+            STONE_CHECK(entries != nullptr);
+            bool found = false;
+            for (size_t index = 0; entries[index]; ++index) {
+                STONE_CHECK(index < 32768);
+                found |= std::strcmp(entries[index], "STONE_ENVIRONMENT_STARTUP=inherited") == 0;
+            }
+            STONE_CHECK(found);
+        };
+        const auto get = Guest<const char* (*)(const char*)>(AndroidLibcImport("getenv"), "(L)L");
+        if (first == L"getenv") {
+            const auto value = get("STONE_ENVIRONMENT_STARTUP");
+            STONE_CHECK(value && std::strcmp(value, "inherited") == 0);
+        }
+        else if (first == L"arm64") {
+            const auto slot = Arm64LibcDataImport("environ");
+            uintptr_t entries = 0;
+            STONE_CHECK(ReadArm64GuestAllocation(slot, &entries, sizeof(entries)));
+            checkEntries(reinterpret_cast<char**>(entries));
+        }
+        else {
+            STONE_CHECK(first == L"environ");
+            const auto slot = reinterpret_cast<char***>(AndroidLibcImport("environ"));
+            STONE_CHECK(slot != nullptr);
+            checkEntries(*slot);
+        }
+        const auto slot = reinterpret_cast<char***>(AndroidLibcImport("environ"));
+        checkEntries(*slot);
+        const auto set = Guest<int (*)(const char*, const char*, int)>(AndroidLibcImport("setenv"), "(LLI)I");
+        const auto unset = Guest<int (*)(const char*)>(AndroidLibcImport("unsetenv"), "(L)I");
+        STONE_CHECK(set("STONE_ENVIRONMENT_STARTUP", "ignored", 0) == 0);
+        STONE_CHECK(std::strcmp(get("STONE_ENVIRONMENT_STARTUP"), "inherited") == 0);
+        STONE_CHECK(set("STONE_ENVIRONMENT_STARTUP", "updated", 1) == 0);
+        STONE_CHECK(slot == reinterpret_cast<char***>(AndroidLibcImport("environ")));
+        STONE_CHECK(std::strcmp(get("STONE_ENVIRONMENT_STARTUP"), "updated") == 0);
+        bool updated = false;
+        for (auto entry = *slot; *entry; ++entry)
+            updated |= std::strcmp(*entry, "STONE_ENVIRONMENT_STARTUP=updated") == 0;
+        STONE_CHECK(updated);
+        STONE_CHECK(get("STONE_ENVIRONMENT_STARTUP_MISSING") == nullptr);
+        STONE_CHECK(unset("STONE_ENVIRONMENT_STARTUP") == 0 && get("STONE_ENVIRONMENT_STARTUP") == nullptr);
     });
 }
 

@@ -5,3 +5,6 @@ build/
 
 # Visual Studio generated files
 .vs/
+
+# User-specific files
+CMakeUserPresets.json

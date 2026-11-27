@@ -2,7 +2,7 @@ set(STONE_TEST_ROOT "${PROJECT_SOURCE_DIR}/bin/${STONE_WINDOWS_ARCH}/Debug/test"
 file(MAKE_DIRECTORY "${STONE_TEST_ROOT}")
 set(STONE_WINDOWS_TEST_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 # Each component calls this after registering its tests. Preserve per-test
-# ANGLE/ART variables while keeping all native and Java temporary files local.
+# ART variables while keeping all native and Java temporary files local.
 function(stone_test_context)
     file(MAKE_DIRECTORY "${STONE_TEST_ROOT}/temp")
     get_property(component_tests DIRECTORY PROPERTY TESTS)
@@ -20,6 +20,10 @@ set_tests_properties(stone-package-version-tests PROPERTIES LABELS unit)
 add_test(NAME stone-certificate-gpg-tests COMMAND "${STONE_TEST_POWERSHELL}" -NoProfile -File
     "${CMAKE_CURRENT_SOURCE_DIR}/integration/packaging/CheckCertificateGpg.ps1")
 set_tests_properties(stone-certificate-gpg-tests PROPERTIES LABELS unit TIMEOUT 60)
+add_test(NAME stone-angle-runtime-tests COMMAND "${STONE_TEST_POWERSHELL}" -NoProfile -File
+    "${CMAKE_CURRENT_SOURCE_DIR}/integration/packaging/CheckAngleRuntime.ps1"
+    -RuntimeDirectory "${PROJECT_SOURCE_DIR}/bin/x64/Debug")
+set_tests_properties(stone-angle-runtime-tests PROPERTIES LABELS graphics TIMEOUT 60)
 stone_test_context()
 add_subdirectory(fixtures)
 add_subdirectory(image-tools)
@@ -34,7 +38,7 @@ if(STONE_BUILD_SETTINGS)
 endif()
 
 # Compiled test programs follow the owning Windows component.
-foreach(target stone-core-tests stone-art-probe stone-art-aot-tests stone-arm64-cache-tests stone-sqlite-wal-tests)
+foreach(target stone-art-probe stone-art-aot-tests stone-arm64-cache-tests stone-sqlite-wal-tests)
     set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${STONE_TEST_ROOT}/subsystem/$<CONFIG>" FOLDER "Tests/Subsystem")
 endforeach()
 foreach(target stone-host-services-tests stone-application-log-tests stone-job-queue-tests stone-job-profile-tests stone-pending-intents-tests stone-activity-route-tests stone-clipboard-tests)

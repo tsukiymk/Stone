@@ -29,8 +29,6 @@ add_custom_command(TARGET StoneService POST_BUILD
         "$<TARGET_FILE_DIR:StoneService>/licenses/XZ-0BSD.txt"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${oss_dir}/bionic/LICENSE"
         "$<TARGET_FILE_DIR:StoneService>/licenses/Bionic-BSD-2-Clause.txt"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${oss_dir}/angle/LICENSE"
-        "$<TARGET_FILE_DIR:StoneService>/licenses/ANGLE.txt"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${oss_dir}/vulkan/LICENSE.txt"
         "$<TARGET_FILE_DIR:StoneService>/licenses/Vulkan-Apache-2.0.txt"
     VERBATIM)

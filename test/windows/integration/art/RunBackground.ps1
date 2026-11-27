@@ -3,7 +3,6 @@ param(
     [Parameter(Mandatory)][string]$FixtureApk,
     [Parameter(Mandatory)][string]$SystemImage,
     [Parameter(Mandatory)][string]$CacheDirectory,
-    [string]$AngleDirectory,
     [switch]$LibraryOnly,
     [switch]$WakeRecovery,
     [switch]$KeepService,
@@ -28,7 +27,7 @@ if (!(Test-Path -LiteralPath (Join-Path $root 'cache'))) { New-Item -ItemType Ju
 $service = Join-Path $runtime 'StoneService.exe'; $package = 'com.trebledot.stone.job.fixture'
 $files = Join-Path $root "data/data/$package/files"; [IO.Directory]::CreateDirectory($files) | Out-Null
 $events = Join-Path $files 'session-events.txt'
-$savedAngle = $env:STONE_ANGLE_DIR; $savedJava = $env:JAVA_HOME; $script:request = 0; $clients = @(); $brokers = @(); $completed = $false
+$savedJava = $env:JAVA_HOME; $script:request = 0; $clients = @(); $brokers = @(); $completed = $false
 $registry = @()
 foreach ($entry in @(@('Software\Classes\stone',''), @('Software\Classes\stone','URL Protocol'), @('Software\Classes\stone\shell\open\command',''))) {
     $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($entry[0])
@@ -87,7 +86,6 @@ function Background([int]$Duration, [long]$Latency = 100, [bool]$Persisted = $fa
 }
 function Clear-BackgroundRuntime {
     param([switch]$KeepLease)
-    $env:STONE_ANGLE_DIR = $savedAngle
     $env:JAVA_HOME = $savedJava
     try {
     foreach ($process in $clients) {
@@ -133,7 +131,6 @@ function Clear-BackgroundRuntime {
 if ($LibraryOnly) { return }
 try {
     $passed = Join-Path $output 'passed.txt'; if (Test-Path -LiteralPath $passed) { Remove-Item -LiteralPath $passed -Force }
-    if ($AngleDirectory) { $env:STONE_ANGLE_DIR = (Resolve-Path -LiteralPath $AngleDirectory).Path }
     if ($WakeRecovery) {
         if (!$BusyApk) { throw 'Wake recovery needs a distinct BusyApk, such as Stone CIT' }
         if ($ForegroundRace -and !$KeepService) { throw 'Foreground race needs KeepService' }

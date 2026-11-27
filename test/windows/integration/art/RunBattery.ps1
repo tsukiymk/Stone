@@ -5,7 +5,6 @@ param(
     [Parameter(Mandatory)][string]$Apk,
     [Parameter(Mandatory)][string]$ArtRuntimeJar,
     [Parameter(Mandatory)][string]$DataDirectory,
-    [string]$AngleDirectory,
     [string]$OutputDirectory = 'bin/x64/Debug/test/battery/results',
     [int]$TimeoutSeconds = 180
 )
@@ -22,11 +21,9 @@ $output = [IO.Path]::GetFullPath($OutputDirectory)
 $passed = Join-Path $output 'passed.txt'
 if (Test-Path -LiteralPath $passed -PathType Leaf) { Remove-Item -LiteralPath $passed -Force }
 $previous = $env:STONE_ART_DATA_DIRECTORY
-$previousAngle = $env:STONE_ANGLE_DIR
 $process = $null
 try {
     $env:STONE_ART_DATA_DIRECTORY = $data
-    if ($AngleDirectory) { $env:STONE_ANGLE_DIR = (Resolve-Path -LiteralPath $AngleDirectory).Path }
     $arguments = '"{0}" "{1}" "{2}" --battery "{3}"' -f $prepared, $dex, $apkPath, $runtime
     $process = Start-Process -FilePath $probePath -ArgumentList $arguments -PassThru -WindowStyle Hidden `
         -RedirectStandardOutput (Join-Path $output 'stdout.txt') -RedirectStandardError (Join-Path $output 'stderr.txt')
@@ -44,6 +41,5 @@ try {
     Get-Content -LiteralPath (Join-Path $output 'passed.txt')
 } finally {
     $env:STONE_ART_DATA_DIRECTORY = $previous
-    $env:STONE_ANGLE_DIR = $previousAngle
     if ($process) { if (!$process.HasExited) { Stop-Process -Id $process.Id -Force }; $process.Dispose() }
 }

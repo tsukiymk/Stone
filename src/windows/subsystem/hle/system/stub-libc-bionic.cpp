@@ -51,6 +51,7 @@
 #include <map>
 #include <mutex>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -2685,13 +2686,25 @@ const char* ErrorText(int code)
     return text;
 }
 
+char*** EnvironmentSlot()
+{
+    static const auto slot = [] {
+        // Unicode Windows entry points initialize only the wide CRT environment.
+        // Image code can read environ directly before any narrow getenv call.
+        if (_initialize_narrow_environment() != 0)
+            throw std::runtime_error("could not initialize the Android environment");
+        return __p__environ();
+    }();
+    return slot;
+}
+
 const char* GetEnv(const char* key)
 {
     // Bionic returns a pointer to the current environment entry.
     const std::string_view name(key);
     if (name == "ANDROID_ROOT")
         return "/system";
-    const auto environment = *__p__environ();
+    const auto environment = *EnvironmentSlot();
     if (!environment)
         return nullptr;
     for (auto entry = environment; *entry; ++entry) {
@@ -7123,7 +7136,7 @@ uintptr_t AndroidLibcImport(std::string_view name, bool hostAbi)
     if (!hostAbi && name == "lldiv")
         return reinterpret_cast<uintptr_t>(&AndroidLongLongDiv);
     if (name == "environ")
-        return reinterpret_cast<uintptr_t>(__p__environ());
+        return reinterpret_cast<uintptr_t>(EnvironmentSlot());
     if (!hostAbi && name == "timezone")
         return reinterpret_cast<uintptr_t>(&LocalTimeZone().offset);
     if (!hostAbi && name == "daylight")
@@ -9212,7 +9225,7 @@ uintptr_t Arm64LibcFunctionImport(std::string_view symbol)
 uintptr_t* Arm64EnvironmentSlot()
 {
     static const auto slot = [] {
-        const auto environment = *__p__environ();
+        const auto environment = *EnvironmentSlot();
         size_t count = 0, textBytes = 0;
         if (environment) {
             for (; environment[count]; ++count)

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": ["angle"],
+  "overrides": [
+    { "name": "angle", "version-string": "chromium_7258", "port-version": 2 }
+  ],
+  "builtin-baseline": "e6d62cc9ce8f8d9687df14521118f2ec3c10ee6a",
+  "vcpkg-configuration": {
+    "overlay-triplets": ["./dep/vcpkg-overlay-triplets"],
+    "overlay-ports": ["./dep/vcpkg-overlay-ports"]
+  }
+}

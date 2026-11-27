@@ -31,6 +31,7 @@ Spelling corrections, broken links, and small, well-scoped fixes can be submitte
 Stone targets Windows. Its native code uses C++20 and the MSVC toolchain. Prepare the following dependencies:
 
 - Visual Studio 2026 C++ desktop development tools and the Windows SDK. CMake must support the `Visual Studio 18 2026` generator. ARM64 cross-compilation also requires MSVC ARM64 tools.
+- An existing vcpkg checkout selected by `VCPKG_ROOT`, plus Git and PowerShell 7. See the [dependency setup](docs/development/build.md#third-party-dependencies).
 - Windows JDK 21. Specify it explicitly with `STONE_JDK_HOME`; otherwise, `JAVA_HOME` takes precedence, followed by a search for local installations if it is unset. Update the CMake cache when switching JDKs.
 - The Android SDK's `android.jar` and D8, configured through `STONE_ANDROID_SDK`, `STONE_ART_ANDROID_JAR`, and `STONE_ART_D8_JAR`. APK test fixtures also require aapt2 and apksigner from the corresponding build-tools.
 - Building StoneSettings requires the .NET 10 SDK, C# tools, and NuGet restore. Set `STONE_BUILD_SETTINGS=OFF` to build only the native components.

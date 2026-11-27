@@ -8,11 +8,13 @@ Use CMake presets from the repository root. Windows x64 is the primary execution
 - Windows JDK 21. An explicit `STONE_JDK_HOME` takes precedence. Otherwise, `JAVA_HOME` is used; local installations are searched only when that environment variable is unset. The resolved path is stored in the CMake cache, so update that cache entry when switching JDKs.
 - Android SDK `android.jar` and D8, configured through `STONE_ANDROID_SDK`, `STONE_ART_ANDROID_JAR`, and `STONE_ART_D8_JAR`. APK fixtures also require aapt2 and apksigner from the corresponding build-tools installation.
 - The settings application requires the .NET 10 SDK, C# build tools, and NuGet restore. `STONE_BUILD_SETTINGS=OFF` builds the C++ components, including StoneImageTool, without the .NET SDK.
+- An existing vcpkg checkout, selected by the `VCPKG_ROOT` environment variable, plus Git and PowerShell 7. vcpkg supplies its Python, CMake, and Ninja helpers; uncached dependencies require network access and the installed MSVC tools.
 
 ## Configuration and build
 
 ```powershell
 $ARCH = 'x64' # or 'ARM64'
+$env:VCPKG_ROOT = 'C:/dev/vcpkg' # existing external checkout
 cmake --preset $ARCH
 cmake --build "build/$ARCH" --config Debug -- /restore
 ```
@@ -29,6 +31,44 @@ JDK 21 supplies build-time JNI headers and compiles the ART bootstrap module wit
 `-- /restore` lets MSBuild restore NuGet dependencies before building StoneSettings.
 Use it on clean builds, including when StoneSettings is an indirect dependency
 of a test or packaging target. Native-only builds do not require NuGet restore.
+
+## Third-party dependencies
+
+[`CMakePresets.json`](../../CMakePresets.json) selects the official [vcpkg CMake toolchain](https://learn.microsoft.com/en-us/vcpkg/users/buildsystems/cmake-integration) from `$env{VCPKG_ROOT}`, the target triplet, and Stone's static CRT before `project()`. Provide the vcpkg checkout before configuring; Stone does not clone it or change its revision. The toolchain can bootstrap a missing vcpkg executable. Use a recent compatible vcpkg checkout; CI checks out the root manifest's baseline commit to also pin its build-tool versions.
+
+Configuration restores the manifest's dependencies and makes them available to standard `find_package()`, `find_path()`, and `find_library()` calls. A binary-cache miss builds the package from source; later configurations reuse installed packages or vcpkg's binary cache. First-time source builds can take several minutes.
+
+The root [`vcpkg.json`](../../vcpkg.json) owns the dependency list, version overrides, and overlay paths. Overlay ports are under `dep/vcpkg-overlay-ports/`, and Windows triplets are under `dep/vcpkg-overlay-triplets/`. The triplets and Stone use a static CRT; libraries are static by default and provide both Debug and Release configurations. Ports that need DLL deployment can select their own linkage and configuration.
+
+To add a dependency, add its port to `vcpkg.json`, reconfigure, then use its documented CMake package and imported target in the consuming component. Review its licenses and deployment requirements, and update the [third-party notices](../third-party/THIRD_PARTY_NOTICES.txt). Statically linked libraries become part of the consumer; additional runtime DLLs need explicit packaging rules and notices before they can be shipped in MSI/MSIX.
+
+The presets leave vcpkg's cache locations at their official defaults:
+
+- Installed packages: `build/<preset>/vcpkg_installed/<triplet>/`.
+- Downloads, tools, buildtrees, and temporary package outputs: under `VCPKG_ROOT`.
+- Windows binary archives: `%LOCALAPPDATA%/vcpkg/archives`, unless overridden by the developer's vcpkg environment configuration.
+
+Configure architectures sequentially when sharing one external checkout. Use `-DVCPKG_MANIFEST_INSTALL=OFF` to consume an already installed dependency tree without restoring it. Missing packages still fail configuration. An additional toolchain can be supplied through `VCPKG_CHAINLOAD_TOOLCHAIN_FILE`.
+
+Set machine-specific paths through the environment or an untracked `CMakeUserPresets.json`.
+
+## Building the graphics runtime
+
+Manifest restoration supplies the pinned ANGLE EGL/GLES DLLs during configuration, building from source on binary-cache misses. The triplets select Release DLLs for all Stone configurations, including Debug; ANGLE's implementation dependencies remain static. Native compilation uses headers under `<VCPKG_INSTALLED_DIR>/<VCPKG_TARGET_TRIPLET>/include`. Configuration fails if the required EGL/GLES headers or SDK D3DCompiler redistributable are missing. See [ANGLE sources and adaptation](../third-party/angle.md).
+
+Building StoneClient installs `libEGL.dll`, `libGLESv2.dll`, and the SDK's `d3dcompiler_47.dll` into `bin/<architecture>/<configuration>/` beside `StoneClient.exe`. The `stone-graphics` install component deploys these DLLs, licenses, and vcpkg SPDX metadata. [Package collection](../windows/packaging.md#artifacts-and-package-contents) uses the same component.
+
+To stage the configured graphics runtime:
+
+```powershell
+cmake --build build/x64 --config Debug --target stone-angle
+```
+
+To collect only that component into another directory, replace the example destination with the required path:
+
+```powershell
+cmake --install build/x64 --config Debug --prefix 'C:/stage/Stone' --component stone-graphics
+```
 
 ## Publishing the settings application
 
@@ -76,6 +116,8 @@ cmake --preset x64 -DSTONE_TESTS=ON
 cmake --build build/x64 --config Debug --target stone-windows-tests -- /restore
 cmake --build build/x64 --config Debug --target stone-test-fixtures
 ```
+
+Core tests use `bin/x64/Debug/test/subsystem/core/Debug/` with their fixture DLLs. The ART probe uses `bin/x64/Debug/test/subsystem/Debug/`; its graphics runtime is deployed beside it through the `stone-graphics` install component.
 
 After a successful build, list and run the relevant CTest cases from the Debug directory:
 

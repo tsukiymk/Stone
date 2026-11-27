@@ -20,6 +20,8 @@ The Windows-backed video MediaCodecs can publish decoded pixels into a Stone sof
 
 Guest EGL first probes the Windows D3D11 ANGLE backend, then Vulkan and OpenGL, and finally D3D11 WARP. A display handle is selected only after initialization succeeds. Available backends depend on the ANGLE build and host drivers.
 
+The bundled ANGLE build includes D3D11 and WARP. Stone loads `libEGL.dll` and `libGLESv2.dll` only from the executable's directory, independently of the working directory, including package-management and Service-created Clients. Missing or incompatible EGL/GLES DLLs cause graphics initialization to fail. ANGLE loads D3DCompiler through the Windows DLL search rules; this dependency is bundled as `d3dcompiler_47.dll`. See [ANGLE sources and licenses](../third-party/angle.md).
+
 ## Window resizing
 
 The launcher Activity's resizeableActivity takes precedence over the application declaration; aliases use their target's policy. Default policy follows the target SDK and image resizeMode. Resizable windows provide borders and a maximize button; non-resizable windows keep a fixed size.

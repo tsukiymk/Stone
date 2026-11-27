@@ -102,11 +102,13 @@
         "abi": "x86_64",
         "version": "37",
         "versionSource": "android-api",
+        "source": "Android API 37 extension 22 Google Play x86_64 revision 7 system image CE2A.260420.051.A2, /apex/com.android.art/lib64/libart.so",
         "sha256": "99ff47d82c58be9f750ab7016dedc0d2f498c8393b8afdd815f50a95ebfe3058",
         "compatibility": {
           "minVersion": "37",
           "maxVersion": "37",
           "scope": [
+            "vm-startup-with-uninitialized-narrow-host-environment",
             "nterp-interpreter",
             "original-dex-execution",
             "jni-callbacks",

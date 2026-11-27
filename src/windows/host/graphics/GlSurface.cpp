@@ -26,44 +26,17 @@ using namespace stone::windows::angle_backend;
 namespace {
 namespace fs = std::filesystem;
 
-fs::path EnvironmentPath(const wchar_t* name)
-{
-    std::wstring value(32768, L'\0');
-    const DWORD size = GetEnvironmentVariableW(name, value.data(), static_cast<DWORD>(value.size()));
-    if (!size || size >= value.size())
-        return {};
-    value.resize(size);
-    return value;
-}
-
-bool HasAngle(const fs::path& path)
-{
-    std::error_code error;
-    return !path.empty() && fs::is_regular_file(path / L"libEGL.dll", error) &&
-           fs::is_regular_file(path / L"libGLESv2.dll", error);
-}
-
 fs::path AngleDirectory()
 {
-    if (auto path = EnvironmentPath(L"STONE_ANGLE_DIR"); !path.empty()) {
-        return path.is_absolute() && HasAngle(path) ? path : fs::path{};
-    }
-    // Main sets the working directory to the runtime directory before starting the JVM.
-    std::error_code error;
-    const auto adjacent = fs::current_path(error) / L"angle";
-    if (adjacent.is_absolute() && HasAngle(adjacent))
-        return adjacent;
-    for (const auto variable : {L"ANDROID_HOME", L"ANDROID_SDK_ROOT", L"LOCALAPPDATA"}) {
-        auto sdk = EnvironmentPath(variable);
-        if (!sdk.is_absolute())
-            continue;
-        if (std::wstring_view(variable) == L"LOCALAPPDATA")
-            sdk /= L"Android/Sdk";
-        const auto path = sdk / L"emulator/lib64/gles_angle";
-        if (HasAngle(path))
-            return path;
-    }
-    return {};
+    // Service and package-management launches need not use the installation
+    // directory as their working directory.
+    std::wstring executable(32768, L'\0');
+    const DWORD size = GetModuleFileNameW(nullptr, executable.data(), static_cast<DWORD>(executable.size()));
+    if (!size || size >= executable.size())
+        return {};
+    executable.resize(size);
+    const auto directory = fs::path(executable).parent_path();
+    return directory.is_absolute() ? directory : fs::path{};
 }
 
 bool LoadAngle(bool webView)
@@ -158,7 +131,7 @@ uintptr_t WindowsAngleExport(bool egl, const char* name)
             result.egl = LoadLibraryExW((dir / L"libEGL.dll").c_str(), nullptr, flags);
         }
         if (!result.egl || !result.gles) {
-            std::fprintf(stderr, "[win32] OpenGL ES needs ANGLE libEGL.dll and libGLESv2.dll; set STONE_ANGLE_DIR\n");
+            std::fprintf(stderr, "[win32] OpenGL ES needs ANGLE libEGL.dll and libGLESv2.dll beside the executable\n");
         }
         return result;
     }();
@@ -184,8 +157,8 @@ void* WindowsAngleGuestDisplay()
                     return candidate;
             }
             const EGLAttrib software[]{EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
-                                       EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE,
-                                       EGL_NONE};
+                                       EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE,
+                                       EGL_PLATFORM_ANGLE_DEVICE_TYPE_D3D_WARP_ANGLE, EGL_NONE};
             const auto candidate = getPlatform(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, software);
             if (candidate != EGL_NO_DISPLAY && InitializeWindowsAngleDisplay(candidate, nullptr, nullptr))
                 return candidate;

@@ -51,19 +51,6 @@ struct Handle {
     Handle& operator=(const Handle&) = delete;
 };
 
-std::wstring Environment(const wchar_t* name)
-{
-    const auto size = GetEnvironmentVariableW(name, nullptr, 0);
-    if (!size)
-        return {};
-    std::wstring value(size, 0);
-    const auto length = GetEnvironmentVariableW(name, value.data(), size);
-    if (!length || length >= size)
-        throw std::runtime_error("Could not read the ART launch environment");
-    value.resize(length);
-    return value;
-}
-
 std::string Utf8(const fs::path& path)
 {
     const auto text = path.generic_u8string();
@@ -437,9 +424,6 @@ int LaunchArtApplication(const std::vector<std::wstring>& arguments, const fs::p
                      : installed      ? "/data/app/stone/" + Utf8(apk.parent_path().filename()) + "/base.apk"
                                       : StageArtLaunchCode(apk, root, ".apk");
     const auto host = StageArtLaunchCode(fs::canonical(runtimeDirectory / L"stone-art-runtime.jar"), root, ".jar");
-    if (Environment(L"STONE_ANGLE_DIR").empty() && fs::is_regular_file(runtimeDirectory / L"angle/libEGL.dll") &&
-        fs::is_regular_file(runtimeDirectory / L"angle/libGLESv2.dll"))
-        SetEnvironmentVariableW(L"STONE_ANGLE_DIR", (runtimeDirectory / L"angle").c_str());
     if (GetModuleHandleW(L"jvm.dll"))
         throw std::runtime_error("The ART application process must not contain a Windows JVM");
     // ArtBoot selects current package code before creating its application

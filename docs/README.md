@@ -50,3 +50,4 @@ Stone is an Android compatibility layer for Windows. This documentation covers u
 - [Bionic error description sources](third-party/bionic.md)
 - [XZ Embedded](third-party/xz-embedded.md)
 - [Zydis and Zycore](third-party/zydis.md)
+- [Windows ANGLE runtime](third-party/angle.md)

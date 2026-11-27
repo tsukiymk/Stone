@@ -12,7 +12,9 @@ Stone provides MSI, MSIX, and MSIXBundle targets for x64 and ARM64. This documen
 
 Choose either MSI or MSIX. Migration between them and concurrent operation are not guaranteed. Before installing, upgrading, or uninstalling, close StoneSettings and application Clients belonging to that installation. The installer stops the service and its brokers during replacement or removal; brokers request graceful Client shutdown and have a bounded exit deadline. Uninstalling a package retains existing Stone application data.
 
-Packages do not include Android system images or a JDK. Installation does not automatically download these components or external runtime dependencies such as ANGLE DLLs. StoneSettings provides a user-initiated API 37 image download to `%LOCALAPPDATA%\Trebledot Productions\Stone\System Images`; see [image downloads](settings.md#downloading-an-android-image). The package includes native `StoneImageTool.exe`; initial preparation and execution require no Windows JDK/JVM or installed .NET runtime. APK execution on ARM64 hosts is not implemented. Package architecture support does not establish APK execution support. See [Using Stone](../usage.md) for runtime requirements.
+The Windows graphics runtime is bundled; an Android SDK or separate ANGLE installation is not required on the target machine. See [package contents](#artifacts-and-package-contents) for the runtime files and [ANGLE sources and licenses](../third-party/angle.md) for their provenance.
+
+Packages do not include Android system images or a JDK. StoneSettings provides a user-initiated API 37 image download to `%LOCALAPPDATA%\Trebledot Productions\Stone\System Images`; see [image downloads](settings.md#downloading-an-android-image). The package includes native `StoneImageTool.exe`; initial preparation and execution require no Windows JDK/JVM or installed .NET runtime. APK execution on ARM64 hosts is not implemented. Package architecture support does not establish APK execution support. See [Using Stone](../usage.md) for runtime requirements.
 
 Packages register `StoneService` as an automatic own-process Windows service under LocalSystem, with the `--service` argument. The service only supervises brokers launched under signed-in users' tokens and environments; application execution, host state, clipboard, notifications, and user files remain in those user sessions. No Android runtime is loaded in the LocalSystem host. Before login the supervisor waits without launching Android applications.
 
@@ -52,7 +54,7 @@ cmake --build build/x64 --config Release --target msipackage -- /restore
 cmake --build build/x64 --config Release --target msixinstallerpackage -- /restore
 ```
 
-Packaging is explicitly enabled with `STONE_PACKAGING=ON`, is excluded from the default build, and requires `STONE_BUILD_SETTINGS=ON`. Targets and aliases are:
+Packaging is explicitly enabled with `STONE_PACKAGING=ON`, is excluded from the default build, and requires `STONE_BUILD_SETTINGS=ON` (enabled by default). Targets and aliases are:
 
 | Artifact | Build target | Alias |
 | --- | --- | --- |
@@ -109,15 +111,11 @@ The workflow passes this display version as `STONE_VERSION`; numeric installer
 versions are mapped as described below. Preview tags create prerelease drafts.
 Manual runs upload build artifacts without creating a GitHub Release.
 
-The pipeline builds Release MSI/MSIX packages for x64 and ARM64, publishes the
-settings application with Native AOT and trimming, and creates the combined
-MSIXBundle. Release builds do not compile or run Debug tests or APK fixtures;
-the [main branch workflow](../../.github/workflows/build.yml) retains those checks.
-All five packages are checksum-verified and uploaded as
-`Stone_<version>_<architecture>` files inside the `Stone-<version>-windows`
-Actions artifact, retained for 30 days.
-Only explicitly collected release assets are uploaded; staging directories are
-excluded.
+The pipeline builds Release MSI/MSIX packages for x64 and ARM64, publishes the settings application with Native AOT and trimming, and creates the combined MSIXBundle. Release builds do not compile or run Debug tests or APK fixtures; the [main branch workflow](../../.github/workflows/build.yml) retains those checks.
+
+Both workflows restore the pinned ANGLE packages for x64 and ARM64, building from source on binary-cache misses, and cache vcpkg downloads and binary archives. The main branch also checks x64 EGL initialization and pixel readback through D3D11 WARP.
+
+All five packages are checksum-verified and uploaded as `Stone_<version>_<architecture>` files inside the `Stone-<version>-windows` Actions artifact, retained for 30 days. Only explicitly collected release assets are uploaded; staging directories are excluded.
 
 Successful tag builds create a **draft** GitHub Release with the packages
 and GitHub-generated release notes. Checksums are passed between workflow jobs
@@ -274,7 +272,7 @@ Packages are written to `bin/<architecture>/<configuration>/packages/`. Director
 
 Each package has a matching `.sha256` file. Bundles are written under the architecture directory that initiated bundling. `packages/work/<unique-directory>/` retains staging files and generated manifests for each packaging run. Failed builds, packaging, or signing do not replace a previously successful package with the same name.
 
-Contents include StoneService, StoneClient, StoneArtCompiler on x64, `stone-art-runtime.jar`, StoneImageTool, the self-contained settings Publish output, MSVC redistributable DLLs, and third-party licenses. Only explicitly listed native output files are collected. Settings publication dependencies are retained, with PDBs removed. Tests, logs, APKs, images, application data, and caches are excluded. Symbolic links and junctions in input trees are rejected.
+Contents include StoneService, StoneClient, StoneArtCompiler on x64, `stone-art-runtime.jar`, StoneImageTool, the self-contained settings Publish output, ANGLE and D3DCompiler DLLs, MSVC redistributable DLLs, and third-party licenses. Only explicitly listed native output files are collected. Graphics DLLs, notices and vcpkg SPDX metadata come directly from CMake's `stone-graphics` install component into a fresh payload. Missing graphics files or mismatched DLL PE architectures terminate packaging before Settings publication. Settings publication dependencies are retained, with PDBs removed. Tests, logs, APKs, images, application data, and caches are excluded. Symbolic links and junctions in input trees are rejected.
 
 MSIX runs the packaged desktop programs directly and does not embed MSI. Its manifest disables file and registry write virtualization. Application data roots, Shell registration, and cross-process identity checks follow Stone's runtime rules. StoneService manages application shortcuts and protocols by application identity; see [Windows desktop integration](integration.md).
 

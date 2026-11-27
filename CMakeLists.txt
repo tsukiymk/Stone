@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.25)
 
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+if(NOT CMAKE_TOOLCHAIN_FILE OR NOT EXISTS "${CMAKE_TOOLCHAIN_FILE}")
+    message(FATAL_ERROR "Set VCPKG_ROOT to an existing vcpkg checkout and configure with a Stone CMake preset.")
+endif()
 project(Stone LANGUAGES C CXX RC)
+
+file(GLOB_RECURSE stone_vcpkg_configuration CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/dep/vcpkg-overlay-ports/*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/dep/vcpkg-overlay-triplets/*")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg.json" ${stone_vcpkg_configuration})
 
 if(NOT WIN32 OR NOT MSVC)
     message(FATAL_ERROR "Stone requires a Windows target and an MSVC-compatible toolchain.")
@@ -24,13 +34,13 @@ set(stone_platform_bin "${PROJECT_SOURCE_DIR}/bin/${STONE_WINDOWS_ARCH}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${stone_platform_bin}/$<CONFIG>")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/$<CONFIG>")
 
-list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(StoneVersion)
 configure_file(cmake/StoneVersion.h.in "${CMAKE_BINARY_DIR}/version/StoneVersion.h" @ONLY)
 include(WindowsDependencies)
 
 option(STONE_TESTS "Build Windows x64 component tests and Android fixture targets" OFF)
 option(STONE_BUILD_SETTINGS "Build the WinUI settings application (.NET 10 SDK required)" ON)
+option(STONE_PACKAGING "Enable MSI and MSIX packaging targets" OFF)
 if(STONE_TESTS AND STONE_WINDOWS_ARCH STREQUAL "x64")
     enable_testing()
 endif()
@@ -65,7 +75,6 @@ if(STONE_TESTS AND STONE_WINDOWS_ARCH STREQUAL "x64")
     add_subdirectory(test/windows)
 endif()
 
-option(STONE_PACKAGING "Enable MSI and MSIX packaging targets" OFF)
 if(STONE_PACKAGING)
     include(WindowsPackaging)
     add_subdirectory(msipackage)

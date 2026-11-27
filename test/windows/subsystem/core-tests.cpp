@@ -35,6 +35,12 @@ int wmain(int argc, wchar_t** argv)
     using namespace stone::windows::test;
     try {
         const std::wstring_view group = argc > 1 ? argv[1] : L"";
+        if (group == L"environment" && argc == 3) {
+            Suite suite("Unicode host environment");
+            STONE_CHECK(stone::windows::InitializeAndroidNativeBackend());
+            TestLibcEnvironment(suite, argv[2]);
+            return suite.Finish();
+        }
         if (group == L"local-listener-probe" && (argc == 2 || argc == 3))
             return ProbeLocalListener(argc == 3 ? argv[2] : nullptr);
         if (group == L"inotify-storage" && argc == 2) {
@@ -156,7 +162,7 @@ int wmain(int argc, wchar_t** argv)
             return 0;
         }
         std::cerr
-            << "Expected allocation, local-listener-probe, system <api>, system-image <api> <img>, external[-local], arm64-profile, arm64-block, arm64-dispatch, arm64-stack-trace, arm64-data-cache, arm64-compact-pc, arm64, "
+            << "Expected environment <environ|getenv|arm64>, allocation, local-listener-probe, system <api>, system-image <api> <img>, external[-local], arm64-profile, arm64-block, arm64-dispatch, arm64-stack-trace, arm64-data-cache, arm64-compact-pc, arm64, "
                "ubsan <elf>, art-image <img> <cache>, art-prepared-arm64[-framework] <directory>, or arm64-image-zlib <directory>\n";
     }
     catch (const std::exception& error) {
