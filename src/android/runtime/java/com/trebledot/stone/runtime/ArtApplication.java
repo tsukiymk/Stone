@@ -456,6 +456,7 @@ public final class ArtApplication {
         Class<?> contextType = Class.forName("android.app.ContextImpl");
         if (android.os.Looper.myLooper() == null || android.os.Looper.myLooper() != android.os.Looper.getMainLooper())
             throw new IllegalStateException("ART application startup requires the main Looper thread");
+        ArtBoot.setProcessName(ArtProcess.current(apk));
         ArtRuntimeInit.initialize();
         ArtPackageEvents packageEvents = null;
         ArtServices.install(apk, classLoader);

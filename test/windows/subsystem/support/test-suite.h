@@ -13,6 +13,7 @@
 namespace stone::windows::test {
 class Suite;
 void TestInotifyStorage(Suite& suite);
+void TestProcCommandLine(Suite& suite);
 void CheckArm64ScalarDecode();
 void TestArtAudioOutputSample(const std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path&,
                               const std::filesystem::path&, bool codecs = false);

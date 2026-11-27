@@ -8,6 +8,7 @@ public final class ArtBoot {
     private ArtBoot() {}
     static native void lockApplication(String packageName);
     static native void bindApplicationUid(int uid);
+    static native void setProcessName(String name);
     private static native void registerLaunchProfile(String name) throws java.io.IOException;
     static native void bindNativeLibraries(ClassLoader loader, String directory,String dataDirectory) throws java.io.IOException;
     static native long[] memoryInfo();

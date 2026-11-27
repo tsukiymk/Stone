@@ -269,7 +269,7 @@ endforeach()
 add_test(NAME stone-core-external COMMAND stone-core-tests external)
 set_tests_properties(stone-core-external PROPERTIES LABELS "core;external" TIMEOUT 60)
 
-foreach(group hle allocation local-listener-probe inotify-storage external-local arm64-profile arm64-block arm64-dispatch)
+foreach(group hle allocation local-listener-probe inotify-storage proc-cmdline external-local arm64-profile arm64-block arm64-dispatch)
     add_test(NAME stone-core-${group} COMMAND stone-core-tests ${group})
     set_tests_properties(stone-core-${group} PROPERTIES LABELS "core;native-layers;unit" TIMEOUT 60)
 endforeach()

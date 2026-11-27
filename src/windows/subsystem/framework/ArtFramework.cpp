@@ -1511,6 +1511,21 @@ bool RegisterArtHost(JNIEnv* env)
                 }
             }),
         Native(
+            "setProcessName", "(Ljava/lang/String;)V",
+            +[](JNIEnv* env, jclass, jstring name) {
+                try {
+                    if (!name)
+                        throw std::invalid_argument("Android process name is missing");
+                    const StringChars text(env, name);
+                    if (!text.Get())
+                        return;
+                    SetAndroidProcessName(text.Get());
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/lang/IllegalArgumentException", error.what());
+                }
+            }),
+        Native(
             "bindApplicationUid", "(I)V",
             +[](JNIEnv* env, jclass, jint uid) {
                 if (applicationLock || uid < 10000 || uid > 19999) {

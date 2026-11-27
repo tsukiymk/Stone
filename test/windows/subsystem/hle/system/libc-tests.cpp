@@ -1195,6 +1195,138 @@ void TestSignalSets(Suite& suite)
     suite.Run("libc-signal-set-64-aliases", CheckWideSignalSets);
 }
 
+void TestProcCommandLine(Suite& suite)
+{
+    struct Stat {
+        uint64_t device, inode, links;
+        uint32_t mode, uid, gid, padding;
+        uint64_t special;
+        int64_t size, blockSize, blocks;
+        AndroidTimespec accessed, modified, changed;
+        int64_t reserved[3];
+    };
+
+    static_assert(sizeof(Stat) == 144);
+    const auto open = Guest<int (*)(const char*, int, int)>(Libc("open"), "(LII)I");
+    const auto openAt = Guest<int (*)(int, const char*, int, int)>(Libc("openat"), "(ILII)I");
+    const auto read = Guest<intptr_t (*)(int, void*, size_t)>(Libc("read"), "(ILJ)J");
+    const auto write = Guest<intptr_t (*)(int, const void*, size_t)>(Libc("write"), "(ILJ)J");
+    const auto close = Guest<int (*)(int)>(Libc("close"), "(I)I");
+    const auto seek = Guest<int64_t (*)(int, int64_t, int)>(Libc("lseek64"), "(IJI)J");
+    const auto duplicate = Guest<int (*)(int)>(Libc("dup"), "(I)I");
+    const auto fstat = Guest<int (*)(int, Stat*)>(Libc("fstat"), "(IL)I");
+    constexpr const char* path = "/proc/self/cmdline";
+    const auto contents = [&](int fd, std::string_view expected) {
+        STONE_CHECK(fd >= 0);
+        const auto release = [&](int* value) {
+            close(*value);
+        };
+        const std::unique_ptr<int, decltype(release)> guard(&fd, release);
+        std::array<char, 512> bytes{};
+        STONE_CHECK(read(fd, bytes.data(), 3) == 3);
+        const auto rest = read(fd, bytes.data() + 3, bytes.size() - 3);
+        STONE_CHECK(rest == static_cast<intptr_t>(expected.size() + 1 - 3));
+        STONE_CHECK(std::string_view(bytes.data(), expected.size()) == expected && bytes[expected.size()] == '\0');
+        STONE_CHECK(read(fd, bytes.data(), bytes.size()) == 0);
+        STONE_CHECK(seek(fd, 0, SEEK_SET) == 0 && read(fd, bytes.data(), 1) == 1 && bytes[0] == expected.front());
+        const int copy = duplicate(fd);
+        STONE_CHECK(copy >= 0);
+        Stat metadata{};
+        STONE_CHECK(fstat(copy, &metadata) == 0 && metadata.mode == 0100444 && metadata.size == 0);
+        const auto copied = read(copy, bytes.data(), 1);
+        STONE_CHECK(close(copy) == 0 && copied == 1 && bytes[0] == expected[1]);
+        errno = 0;
+        STONE_CHECK(write(fd, "x", 1) == -1 && errno == EBADF);
+        DWORD flags = 0;
+        STONE_CHECK(GetHandleInformation(reinterpret_cast<HANDLE>(_get_osfhandle(fd)), &flags) &&
+                    !(flags & HANDLE_FLAG_INHERIT));
+    };
+    suite.Run("proc-cmdline-native-startup-and-application-process-name", [&] {
+        contents(open(path, 0x80000, 0), "Stone");
+        SetAndroidProcessName("com.trebledot.stone.proc:worker");
+        contents(open(path, 0x80000, 0), "com.trebledot.stone.proc:worker");
+        const auto pidPath = "/proc/" + std::to_string(GetCurrentProcessId()) + "/cmdline";
+        // An absolute openat path ignores an otherwise invalid directory fd.
+        contents(openAt(-1, pidPath.c_str(), 0xa0000, 0), "com.trebledot.stone.proc:worker");
+        const int pending = open(path, 0x80000, 0);
+        STONE_CHECK(pending >= 0);
+        SetAndroidProcessName("com.trebledot.stone.proc");
+        contents(pending, "com.trebledot.stone.proc:worker");
+        contents(open(path, 0x80000, 0), "com.trebledot.stone.proc");
+    });
+    suite.Run("proc-cmdline-stdio-metadata-and-errors", [&] {
+        const auto fopen = Guest<FILE* (*)(const char*, const char*)>(Libc("fopen"), "(LL)L");
+        const auto fread = Guest<size_t (*)(void*, size_t, size_t, FILE*)>(Libc("fread"), "(LJJL)J");
+        const auto fclose = Guest<int (*)(FILE*)>(Libc("fclose"), "(L)I");
+        const auto access = Guest<int (*)(const char*, int)>(Libc("access"), "(LI)I");
+        const auto stat = Guest<int (*)(const char*, Stat*)>(Libc("stat"), "(LL)I");
+        const auto link = Guest<intptr_t (*)(const char*, char*, size_t)>(Libc("readlink"), "(LLJ)J");
+        FILE* file = fopen(path, "re");
+        STONE_CHECK(file);
+        const std::unique_ptr<FILE, decltype(fclose)> guard(file, fclose);
+        std::array<char, 128> bytes{};
+        const std::string expected = "com.trebledot.stone.proc";
+        STONE_CHECK(fread(bytes.data(), 1, bytes.size(), file) == expected.size() + 1 &&
+                    std::string_view(bytes.data(), expected.size()) == expected && bytes[expected.size()] == '\0');
+        Stat metadata{};
+        STONE_CHECK(stat(path, &metadata) == 0 && metadata.mode == 0100444 && metadata.size == 0);
+        STONE_CHECK(access(path, 0) == 0 && access(path, 4) == 0);
+        STONE_CHECK(access(path, 2) == -1 && errno == EACCES);
+        STONE_CHECK(access(path, 1) == -1 && errno == EACCES);
+        STONE_CHECK(link(path, bytes.data(), bytes.size()) == -1 && errno == EINVAL);
+        for (int flags : {1, 2, 0x200, 0x400})
+            STONE_CHECK(open(path, flags, 0) == -1 && errno == EACCES);
+        STONE_CHECK(open(path, 0xc0, 0) == -1 && errno == EEXIST);
+        STONE_CHECK(open(path, 0x10000, 0) == -1 && errno == ENOTDIR);
+        STONE_CHECK(open(path, 0x40000000, 0) == -1 && errno == EINVAL);
+        STONE_CHECK(!fopen(path, "r+") && errno == EACCES);
+        STONE_CHECK(!fopen(path, "w") && errno == EACCES);
+        STONE_CHECK(open("/proc/0/cmdline", 0, 0) == -1 && errno == ENOENT);
+        STONE_CHECK(open("/proc/self/cmdline-extra", 0, 0) == -1 && errno == ENOENT);
+        for (const std::string& invalid : {std::string{}, std::string("bad\0name", 8), std::string(4096, 'a')}) {
+            bool rejected = false;
+            try {
+                SetAndroidProcessName(invalid);
+            }
+            catch (const std::invalid_argument&) {
+                rejected = true;
+            }
+            STONE_CHECK(rejected);
+        }
+        contents(open(path, 0x80000, 0), expected);
+    });
+    suite.Run("proc-cmdline-descriptor-replacement-and-reuse", [&] {
+        const auto dup2 = Guest<int (*)(int, int)>(Libc("dup2"), "(II)I");
+        int proc = open(path, 0x80000, 0);
+        STONE_CHECK(proc >= 0);
+        const auto release = [&](int* value) {
+            close(*value);
+        };
+        const std::unique_ptr<int, decltype(release)> procGuard(&proc, release);
+        const auto diskPath = std::filesystem::current_path() / "proc-cmdline-reuse.bin";
+        const auto diskName = diskPath.u8string();
+        const auto cleanup = [&](void*) {
+            std::filesystem::remove(diskPath);
+        };
+        const std::unique_ptr<void, decltype(cleanup)> diskGuard(reinterpret_cast<void*>(1), cleanup);
+        int ordinary = open(reinterpret_cast<const char*>(diskName.c_str()), 2 | 0x40 | 0x200, 0600);
+        STONE_CHECK(ordinary >= 0);
+        const std::unique_ptr<int, decltype(release)> ordinaryGuard(&ordinary, release);
+        STONE_CHECK(write(ordinary, "ordinary", 8) == 8);
+        int copy = duplicate(ordinary);
+        STONE_CHECK(copy >= 0);
+        const std::unique_ptr<int, decltype(release)> copyGuard(&copy, release);
+        Stat metadata{};
+        STONE_CHECK(dup2(proc, copy) == copy && fstat(copy, &metadata) == 0 && metadata.mode == 0100444);
+        STONE_CHECK(dup2(ordinary, proc) == proc && fstat(proc, &metadata) == 0 && metadata.size == 8);
+        STONE_CHECK(close(copy) == 0);
+        const int reused = copy;
+        copy = open(reinterpret_cast<const char*>(diskName.c_str()), 0, 0);
+        STONE_CHECK(copy == reused && fstat(copy, &metadata) == 0 && metadata.size == 8);
+    });
+    SetAndroidProcessName("Stone");
+}
+
 void TestAllocations(Suite& suite)
 {
     suite.Run("libc-art-allocation-accounting", CheckArtAllocationAccounting);

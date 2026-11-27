@@ -18,6 +18,8 @@ File descriptors, metadata, path normalization, links, and directory access pres
 
 Java SharedMemory uses the image JNI and Stone's memfd backend for creation, mapping, size queries, and write seals. Current-process `/proc/self/fd/<fd>` and `/proc/<pid>/fd/<fd>` links identify registered memory files with their memfd names; duplicated descriptors retain that identity and closed descriptors no longer resolve. This does not expose arbitrary Windows paths or another process's descriptors.
 
+`/proc/self/cmdline` and `/proc/<current-pid>/cmdline` support read-only absolute-path opens, including `openat` and `fopen`. Each open reads an independent, NUL-terminated snapshot of the Android process name, set before Application initialization and including a private-process suffix when present. Before application identity is available, the name is `Stone`. These files do not expose the Windows command line, other processes, or general procfs directory traversal.
+
 inotify uses Windows asynchronous directory notifications. It supports nonrecursive creation, deletion, modification, and same-directory rename events, with queues, masks, and poll/epoll. Permission revocation clears pending data. Ordinary file watches, complete open/read events, and matching moves across directories remain limited.
 
 ## Windows file dialogs
