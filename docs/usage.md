@@ -26,6 +26,8 @@ Use elevated PowerShell `Stop-Service StoneService`, `Start-Service StoneService
 
 A data root holds application registrations, private data, image caches, and background state. Registered applications can also be activated through `stone://<packageName>`. Closing the window destroys the foreground Activity; the application process may remain alive while components or jobs are running.
 
+Normal [application retirement](android/lifecycle.md#foreground-and-background) returns exit code 0 after pending framework writes and native process cleanup; a reported cleanup failure returns 1.
+
 Foreground Client launches show a white startup window with a centered icon, an animated progress bar, and startup status while the system image and ART are initialized. The fixed window is 608 × 342 logical pixels, scales with the selected monitor's DPI, and is centered in the work area of the monitor containing the pointer. Its title bar has only a close button. The initial title uses the APK filename or package name and the Stone icon; the application's resolved title and icon replace them when available. The screen closes after the first software application frame is painted. Closing the startup window cancels the Client process. Background launches and package-management commands do not show this screen.
 
 Reported foreground launch failures display the error and the current process log path (including a configured `STONE_LOG_DIRECTORY` override). If logging could not be initialized, the dialog says that no startup log is available. Native crashes and forced process termination cannot reliably display this dialog. See [diagnostics](development/diagnostics.md) for log details.

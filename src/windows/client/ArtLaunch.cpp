@@ -352,6 +352,31 @@ int RunApplication(ArtRuntime& runtime, const std::string& app, bool installedPa
         throw std::runtime_error("A Windows JVM was loaded during ART execution");
     return result;
 }
+
+[[noreturn]] void FinishApplication(const ArtRuntime& runtime, int result) noexcept
+{
+    FinishLaunchScreen();
+    try {
+        if (runtime.JitEnabled()) {
+            const auto statistics = GetArtJitStatistics();
+            std::cerr << "Stone: ART JIT publications=" << statistics.methods << " GS=" << statistics.instructions
+                      << " TLS-recoveries=" << statistics.tlsRecoveries << " breakpoints=" << statistics.breakpoints
+                      << '\n';
+        }
+        // The process may still have APK-owned non-daemon executors. Retain
+        // normal profiling/cache completion without waiting in DestroyJavaVM.
+        if (runtime.Architecture() == ElfImage::Machine::Arm64)
+            FinishArm64ExecutionSession();
+    }
+    catch (const std::exception& error) {
+        std::fprintf(stderr, "Stone: ART exit finalization failed: %s\n", error.what());
+        result = 1;
+    }
+    std::fprintf(stderr, "Stone: ART application completed (exit code %d).\n", result);
+    StopClientApplicationLogs();
+    StopProcessLog();
+    ExitProcess(static_cast<UINT>(result));
+}
 }
 
 int LaunchArtApplication(const std::vector<std::wstring>& arguments, const fs::path& runtimeDirectory, bool enableJit,
@@ -448,6 +473,9 @@ int LaunchArtApplication(const std::vector<std::wstring>& arguments, const fs::p
         origin.empty() ? apk : origin, expectedPackage.empty() ? package : expectedPackage, imageStamp, wakeToken,
         processName);
     ArtRuntime runtime(options);
+    ConfigureArtSessionExit([&runtime](int result) {
+        FinishApplication(runtime, result);
+    });
     if (runtime.JitEnabled())
         std::cerr << "Stone: experimental " << (runtime.Architecture() == ElfImage::Machine::Arm64 ? "ARM64" : "x64")
                   << " ART Java JIT enabled for this launch\n";
@@ -467,22 +495,7 @@ int LaunchArtApplication(const std::vector<std::wstring>& arguments, const fs::p
         }
         FailLaunchScreen(launchError);
     }
-    FinishLaunchScreen();
-    // The standalone Android process ends after its Activity lifecycle completes.
-    if (runtime.JitEnabled()) {
-        const auto statistics = GetArtJitStatistics();
-        std::cerr << "Stone: ART JIT publications=" << statistics.methods << " GS=" << statistics.instructions
-                  << " TLS-recoveries=" << statistics.tlsRecoveries << " breakpoints=" << statistics.breakpoints
-                  << '\n';
-    }
-    // ExitProcess deliberately bypasses DestroyJavaVM and its profiling dump.
-    // Retain opt-in ARM64 observations on normal and failed application exits.
-    if (runtime.Architecture() == ElfImage::Machine::Arm64)
-        FinishArm64ExecutionSession();
-    // DestroyJavaVM would wait indefinitely for APK-owned non-daemon executors.
-    StopClientApplicationLogs();
-    StopProcessLog();
-    ExitProcess(static_cast<UINT>(result));
+    FinishApplication(runtime, result);
 }
 
 int LaunchArtPackageManagement(const std::vector<std::wstring>& arguments, const fs::path& runtimeDirectory,

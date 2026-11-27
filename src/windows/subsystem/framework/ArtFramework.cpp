@@ -57,6 +57,7 @@ thread_local std::vector<jint> framePixels;
 thread_local HANDLE applicationLock = nullptr;
 thread_local HANDLE legacyApplicationLock = nullptr;
 thread_local HANDLE processApplicationLock = nullptr;
+std::function<void(int)> sessionExit;
 void Throw(JNIEnv* env, const char* name, const char* message);
 
 std::wstring NotificationText(JNIEnv* env, jstring value, jsize maximum)
@@ -844,27 +845,43 @@ bool RegisterArtFramework(JNIEnv* env)
 bool RegisterArtHost(JNIEnv* env)
 {
     InitializeClientServices();
-    const JNINativeMethod session[]{Native(
-                                        "commands", "()I",
-                                        +[](JNIEnv* env, jclass) -> jint {
-                                            try {
-                                                return ReadClientSessionCommands();
-                                            }
-                                            catch (const std::exception& error) {
-                                                Throw(env, "java/lang/IllegalStateException", error.what());
-                                                return 0;
-                                            }
-                                        }),
-                                    Native(
-                                        "retire", "()Z", +[](JNIEnv* env, jclass) -> jboolean {
-                                            try {
-                                                return RetireClientSession() ? JNI_TRUE : JNI_FALSE;
-                                            }
-                                            catch (const std::exception& error) {
-                                                Throw(env, "java/lang/IllegalStateException", error.what());
-                                                return JNI_FALSE;
-                                            }
-                                        })};
+    const JNINativeMethod session[]{
+        Native(
+            "commands", "()I",
+            +[](JNIEnv* env, jclass) -> jint {
+                try {
+                    return ReadClientSessionCommands();
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/lang/IllegalStateException", error.what());
+                    return 0;
+                }
+            }),
+        Native(
+            "retire", "()Z",
+            +[](JNIEnv* env, jclass) -> jboolean {
+                try {
+                    return RetireClientSession() ? JNI_TRUE : JNI_FALSE;
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/lang/IllegalStateException", error.what());
+                    return JNI_FALSE;
+                }
+            }),
+        Native(
+            "complete", "(I)V", +[](JNIEnv* env, jclass, jint result) {
+                if (result != 0 && result != 1) {
+                    Throw(env, "java/lang/IllegalArgumentException", "invalid session exit result");
+                    return;
+                }
+                if (!sessionExit) {
+                    Throw(env, "java/lang/UnsupportedOperationException",
+                          "ART session completion requires a Client exit handler");
+                    return;
+                }
+                sessionExit(result);
+                Throw(env, "java/lang/IllegalStateException", "Client exit handler returned");
+            })};
     if (!Bind(env, "com/trebledot/stone/runtime/ArtSession", session))
         return false;
     const JNINativeMethod pendingIntents[]{
@@ -2213,5 +2230,12 @@ bool RegisterArtHost(JNIEnv* env)
             }),
     };
     return Bind(env, "com/trebledot/stone/runtime/ArtSettingsConfirmation", settings);
+}
+
+void ConfigureArtSessionExit(std::function<void(int)> exit)
+{
+    if (!exit || sessionExit)
+        throw std::logic_error("ART session exit handler must be configured exactly once");
+    sessionExit = std::move(exit);
 }
 }

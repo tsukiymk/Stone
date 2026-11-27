@@ -6,7 +6,10 @@ param(
     [switch]$WarmWithoutJdk,
     [switch]$EnableAot,
     [switch]$EnableJit,
+    [switch]$SkipDuplicate,
+    [switch]$ShutdownService,
     [int]$TimeoutSeconds = 180,
+    [int]$ExpectedExitCode = 0,
     [ValidateRange(0, 3600)][int]$ObserveSeconds = 0,
     [string[]]$ReadyMarkers = @()
 )
@@ -38,7 +41,7 @@ if ($EnableAot) { $arguments += ' --enable-aot' }
 if ($EnableJit) { $arguments += ' --enable-jit' }
 $errorLog = Join-Path $logs 'launch.stderr.txt'
 $process = $null
-$timings=[ordered]@{windowReadyMs=$null;readinessMs=$null;vmReadyMs=$null;apkEntryMs=$null;firstFrameMs=$null;warmWithoutJdk=[bool]$WarmWithoutJdk;outcome='starting';observation='polled log, upper-bound milliseconds';startPoint='before Start-Process'}
+$timings=[ordered]@{windowReadyMs=$null;readinessMs=$null;vmReadyMs=$null;apkEntryMs=$null;firstFrameMs=$null;warmWithoutJdk=[bool]$WarmWithoutJdk;outcome='starting';forcedTermination=$false;observation='polled log, upper-bound milliseconds';startPoint='before Start-Process'}
 function SaveLaunchTiming {
     $timings|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $logs 'launch-timing.json') -Encoding UTF8
 }
@@ -67,7 +70,13 @@ try {
         $process.Refresh()
         if ($process.HasExited) { throw "ART launch exited before opening its window. See $errorLog" }
         $window = $process.MainWindowHandle
-        if ($window -ne [IntPtr]::Zero) { break }
+        if ($window -ne [IntPtr]::Zero) {
+            $windowClass = [Text.StringBuilder]::new(256)
+            [void][StoneArtLaunchWindow]::GetClassName($window, $windowClass, 256)
+            if ($windowClass.ToString() -eq 'Stone.Windows.Runtime') { break }
+            if ($windowClass.ToString() -ne 'Stone.LaunchScreen') { throw "Unexpected ART window class: $windowClass" }
+            $window = [IntPtr]::Zero
+        }
         Start-Sleep -Milliseconds 100
     }
     if ($window -eq [IntPtr]::Zero) { throw "ART window startup timed out. See $errorLog" }
@@ -89,17 +98,19 @@ try {
     $launchClock.Stop()
     $timings.readinessMs=$launchClock.ElapsedMilliseconds;$timings.outcome='ready';SaveLaunchTiming
     if (@($process.Modules | Where-Object ModuleName -eq 'jvm.dll').Count) { throw 'The ART application loaded a Windows JVM' }
-    $duplicate = Start-Process -FilePath $runtimePath -ArgumentList $arguments -PassThru -WindowStyle Hidden `
-        -RedirectStandardError (Join-Path $logs 'duplicate.stderr.txt') -RedirectStandardOutput (Join-Path $logs 'duplicate.stdout.txt')
-    $null = $duplicate.Handle
-    try {
-        if (!$duplicate.WaitForExit(15000)) { throw 'Duplicate ART launch did not exit' }
-        if ($duplicate.ExitCode -ne 1 -or !(Select-String -LiteralPath (Join-Path $logs 'duplicate.stderr.txt') -SimpleMatch 'APK already running' -Quiet)) {
-            throw 'Duplicate ART launch was not rejected'
+    if (!$SkipDuplicate) {
+        $duplicate = Start-Process -FilePath $runtimePath -ArgumentList $arguments -PassThru -WindowStyle Hidden `
+            -RedirectStandardError (Join-Path $logs 'duplicate.stderr.txt') -RedirectStandardOutput (Join-Path $logs 'duplicate.stdout.txt')
+        $null = $duplicate.Handle
+        try {
+            if (!$duplicate.WaitForExit(15000)) { throw 'Duplicate ART launch did not exit' }
+            if ($duplicate.ExitCode -ne 1 -or !(Select-String -LiteralPath (Join-Path $logs 'duplicate.stderr.txt') -SimpleMatch 'APK already running' -Quiet)) {
+                throw 'Duplicate ART launch was not rejected'
+            }
+        } finally {
+            if (!$duplicate.HasExited) { Stop-Process -Id $duplicate.Id -Force }
+            $duplicate.Dispose()
         }
-    } finally {
-        if (!$duplicate.HasExited) { Stop-Process -Id $duplicate.Id -Force }
-        $duplicate.Dispose()
     }
     $observeUntil = [DateTime]::UtcNow.AddSeconds($ObserveSeconds)
     while ([DateTime]::UtcNow -lt $observeUntil) {
@@ -108,8 +119,24 @@ try {
         Start-Sleep -Milliseconds 100
     }
     Start-Sleep -Milliseconds 300
-    if (![StoneArtLaunchWindow]::PostMessage($window, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)) { throw 'Could not close the ART window' }
-    if (!$process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw "ART window did not exit successfully. See $errorLog" }
+    if ($ShutdownService) {
+        # Callers must use a test-owned runtime; this stops its session broker.
+        $service = Join-Path ([IO.Path]::GetDirectoryName($runtimePath)) 'StoneService.exe'
+        $stop = Start-Process $service -ArgumentList '--stop-service' -PassThru -WindowStyle Hidden `
+            -RedirectStandardOutput (Join-Path $logs 'shutdown.stdout.txt') -RedirectStandardError (Join-Path $logs 'shutdown.stderr.txt')
+        $null = $stop.Handle
+        try {
+            if (!$stop.WaitForExit(15000)) { throw 'Service shutdown request timed out' }
+            if ($stop.ExitCode -ne 0) { throw 'Service shutdown request failed' }
+        } finally {
+            if (!$stop.HasExited) { $stop.Kill(); $null = $stop.WaitForExit(5000) }
+            $stop.Dispose()
+        }
+    } elseif (![StoneArtLaunchWindow]::PostMessage($window, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)) {
+        throw 'Could not close the ART window'
+    }
+    if (!$process.WaitForExit(10000)) { throw "ART window retirement timed out. See $errorLog" }
+    if ($process.ExitCode -ne $ExpectedExitCode) { throw "ART window exited with $($process.ExitCode), expected $ExpectedExitCode. See $errorLog" }
     if ($EnableAot) {
         if (!(Select-String -LiteralPath $errorLog -Pattern '\[art-aot\] loaded /data/dalvik-cache/x86_64/' -Quiet) `
                 -or !(Select-String -LiteralPath $errorLog -Pattern "kOatUpToDate with filter 'speed' executable 'true'" -Quiet)) {
@@ -120,7 +147,7 @@ try {
         throw "ART did not enable JIT. See $errorLog"
     }
     $timings.outcome='passed';$timings.exitCode=$process.ExitCode;SaveLaunchTiming
-    Write-Output "PASS: Stone ART original APK window, no Windows JVM, duplicate rejection and shutdown. WarmWithoutJdk=$WarmWithoutJdk. ObserveSeconds=$ObserveSeconds. Logs: $logs"
+    Write-Output "PASS: Stone ART original APK window, no Windows JVM and exit code $ExpectedExitCode. DuplicateChecked=$(!$SkipDuplicate). WarmWithoutJdk=$WarmWithoutJdk. ObserveSeconds=$ObserveSeconds. Logs: $logs"
 } catch {
     $timings.outcome='failed';$timings.failure=$_.Exception.Message
     ObserveLaunchTiming;SaveLaunchTiming
@@ -129,7 +156,7 @@ try {
     $env:JAVA_HOME = $originalJava
     $env:STONE_LOG_DIRECTORY = $originalLogs
     if ($process) {
-        if (!$process.HasExited) { Stop-Process -Id $process.Id -Force;[void]$process.WaitForExit(5000) }
+        if (!$process.HasExited) { $timings.forcedTermination=$true;Stop-Process -Id $process.Id -Force;[void]$process.WaitForExit(5000) }
         $timings.exitCode=$process.ExitCode;SaveLaunchTiming
         $process.Dispose()
     }

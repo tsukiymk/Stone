@@ -62,7 +62,11 @@ public final class ArtBoot {
             // The host keeps the APK resources and its data lock until the process exits.
         }
         // ActivityThread normally drains pending framework writes when an Activity stops.
-        Class.forName("android.app.QueuedWork").getMethod("waitToFinish").invoke(null);
+        finishPendingWrites();
         return 0;
+    }
+
+    static void finishPendingWrites() throws ReflectiveOperationException {
+        Class.forName("android.app.QueuedWork").getMethod("waitToFinish").invoke(null);
     }
 }

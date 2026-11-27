@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.trebledot.stone.sessionexit.fixture">
+<uses-sdk android:minSdkVersion="26" android:targetSdkVersion="37" />
+<application android:name="com.trebledot.stone.probe.SessionExitFixture$App" android:label="Stone session exit fixture">
+<activity android:name="com.trebledot.stone.probe.SessionExitFixture" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+</application></manifest>

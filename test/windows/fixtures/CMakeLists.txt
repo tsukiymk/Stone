@@ -84,6 +84,7 @@ set_property(GLOBAL APPEND PROPERTY STONE_FIXTURE_TARGETS stone-art-video-fixtur
 stone_fixture(stone-cit-apk cit cit stone-cit.apk)
 stone_fixture(stone-job-fixtures jobs jobs jobs.apk)
 stone_fixture(stone-foreground-fixtures foreground foreground foreground.apk)
+stone_fixture(stone-session-exit-fixtures session-exit session-exit session-exit.apk)
 stone_fixture(stone-activity-route-fixtures activity-routes activity-routes source.apk target.apk)
 stone_fixture(stone-resize-fixtures resize resize default-23.apk default-24.apk app-false.apk
     activity-true.apk activity-false.apk resource-true.apk alias.apk)

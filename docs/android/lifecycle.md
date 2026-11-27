@@ -6,6 +6,8 @@ Application, the main Looper, Activity, Service, and Binder objects in Client ar
 
 Opening an APK creates its Application and launcher Activity. `--background` creates only the Application and required background components, without automatically opening the launcher page. Closing the window destroys Activities and releases drawing resources. The process remains alive while a Service, JobService, or supported wake request is active, then obtains Service confirmation before idle exit when no work remains.
 
+After Service grants idle retirement, or Client finishes its bounded Service shutdown, Client closes the Activity and drains Android queued writes before completing native process cleanup. Normal completion returns exit code 0; a reported cleanup failure returns 1. Client completion does not depend on unwinding an APK's main Looper or joining APK-owned non-daemon threads. The Service broker does not execute this Android cleanup.
+
 Application execution locks constrain duplicate launches by data root and package identity. Persistent launch profiles bind code, data, image, and revocable identifiers. Service rechecks identity before restoring a background Client; old notifications, uninstalled packages, and revoked profiles cannot be used to launch another application.
 
 ## Pages, recreation, and input

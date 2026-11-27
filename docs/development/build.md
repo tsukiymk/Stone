@@ -191,3 +191,16 @@ try {
 On successful rendering, the probe writes `test/webview/data/webview-render/frame.png` under the Debug directory. An unavailable-provider result does not exercise page rendering. Record the image identity, provider identity, execution options, and observed outcome when reporting results.
 
 The general `ctest -L unit` command does not run this image-dependent check. To register it with CTest, configure `STONE_CORE_ART_DIRECTORY`, `STONE_CORE_ART_DEX`, and `STONE_CORE_ART_CIT_APK` with absolute paths under the Debug tree and enable `STONE_CORE_ART_APPLICATION=ON`. After rebuilding, run `ctest --test-dir test/ctest/Debug -C Debug -R '^stone-art-webview-providers$' --no-tests=error --output-on-failure` from `bin/x64/Debug/`. CTest uses `test/art-webview-providers/` for `/data`, separately from the direct invocation above.
+
+## ART session retirement check
+
+Build `StoneClient`, `StoneService`, and `stone-session-exit-fixtures` in x64 Debug, then run the image-dependent retirement driver from the repository root. Copy the selected system image under the Debug test tree first.
+
+```powershell
+pwsh -File test/windows/integration/art/RunSessionExit.ps1 `
+    -RuntimeDirectory bin/x64/Debug `
+    -FixtureApk bin/x64/Debug/test/fixtures/session-exit/session-exit.apk `
+    -SystemImage bin/x64/Debug/test/session-exit/input/system.img
+```
+
+The driver leases the shared Windows test runtime and keeps its profile, temporary files, and logs under `bin/x64/Debug/test/session-exit/`. It prepares the image in a real cache directory on the first run and reuses that cache for subsequent cases, retaining separate log copies for each case. It checks ordinary and nested main Loopers, a non-daemon APK worker, queued-write completion, cleanup failure reporting, and Service shutdown. Successful retirement must exit naturally with code 0; the injected cleanup failure must return 1. The launch timing JSON records `forcedTermination` separately so test cleanup cannot count as successful retirement. These cases use `RunLaunch.ps1 -SkipDuplicate` to test retirement independently of duplicate-launch rejection.
