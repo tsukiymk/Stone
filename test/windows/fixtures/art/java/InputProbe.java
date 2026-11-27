@@ -39,6 +39,9 @@ final class InputProbe {
     }
 
     static void menu(Activity activity) throws Exception {
+        android.view.inputmethod.InputMethodManager input=activity.getSystemService(android.view.inputmethod.InputMethodManager.class);
+        if(input==null || !input.getInputMethodList().isEmpty() || !input.getEnabledInputMethodList().isEmpty())
+            throw new AssertionError("Windows input must not advertise Android IME services");
         Window window = activity.getWindow();
         Window.Callback previous = window.getCallback();
         int[] selected = {0};

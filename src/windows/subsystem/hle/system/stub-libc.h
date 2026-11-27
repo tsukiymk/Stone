@@ -223,4 +223,5 @@ uintptr_t AndroidThreadImport(std::string_view name, bool hostAbi = false);
 uintptr_t AndroidAudioImport(std::string_view name, bool hostAbi = false);
 void SetAndroidSystemCaDirs(std::wstring system, std::wstring conscrypt);
 void SetAndroidProcDirectory(std::wstring directory);
+void SetAndroidProcessName(std::string name);
 }

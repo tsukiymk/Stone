@@ -65,6 +65,10 @@ final class ArtConnectivity {
         switch (method.getName()) {
             case "getActiveNetwork": return hostNetworkState != 0 ? network : null;
             case "getActiveNetworkInfo": return networkInfo(hostNetworkState);
+            case "getNetworkInfoForUid":
+                if((Integer)arguments[1]!=android.os.Process.myUid() || (Boolean)arguments[2])
+                    throw new SecurityException("Network information is restricted to the current UID");
+                return network.equals(arguments[0])?networkInfo(hostNetworkState):null;
             case "getNetworkCapabilities":
                 return network.equals(arguments[0]) ? capabilities(hostNetworkState) : null;
             case "getLinkProperties":

@@ -6,6 +6,8 @@ set(stone_probe_sources
     Resources.java
     Application.java
     NativeLibrariesProbe.java
+    WebViewProviderProbe.java
+    WebViewRenderProbe.java
     ResizeWindowProbe.java
     StartupServicesProbe.java
     VideoCodecProbe.java

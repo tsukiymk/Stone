@@ -8,6 +8,14 @@ import java.io.IOException;
 /** Process identity is fixed before any application code runs. */
 final class ArtProcess {
     private static final String requested = System.getProperty("stone.application.process", "");
+    private static byte[] summary;
+    static synchronized void stateSummary(byte[] state) {
+        if(state!=null && state.length>128) throw new IllegalArgumentException("Process state summary exceeds 128 bytes");
+        summary=state==null?null:state.clone();
+    }
+    static synchronized String diagnosticStateSummary() {
+        return summary==null?"":android.util.Base64.encodeToString(summary,android.util.Base64.NO_WRAP);
+    }
     static String current(ArtPackage apk) { return requested.isEmpty() ? apk.applicationInfo.processName : requested; }
     static String diagnosticName(String name) { return requested.isEmpty() ? name : name+"!"+requested.substring(requested.indexOf(':')+1); }
     static void validate(ApplicationInfo app, Iterable<ComponentInfo> components) throws IOException {

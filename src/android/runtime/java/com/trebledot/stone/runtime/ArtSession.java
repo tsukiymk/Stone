@@ -12,12 +12,9 @@ import java.util.concurrent.Executors;
 final class ArtSession {
     private static native int commands();
     static native boolean retire();
-    private static final class Finished extends Error {
-        Finished() { super("Stone session finished", null, false, false); }
-    }
+    private static native void complete(int result);
     private final ArtApplication application;
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final Finished finished = new Finished();
     private final ExecutorService worker = Executors.newSingleThreadExecutor(task -> {
         Thread thread = new Thread(task, "Stone session"); thread.setDaemon(true); return thread;
     });
@@ -37,10 +34,22 @@ final class ArtSession {
             if (!background) session.show();
             Log.i("StoneSession", background ? "Background Application ready; no launcher Activity" : "Foreground Application ready");
             session.main.post(session.pulse); Looper.loop();
-        } catch (Finished signal) { if (signal != session.finished) throw signal; }
-        finally {
-            session.main.removeCallbacks(session.pulse); session.worker.shutdownNow(); session.closeWindow();
-        }
+        } finally { session.close(); }
+    }
+    private void close() throws ReflectiveOperationException {
+        main.removeCallbacks(pulse); worker.shutdownNow(); closeWindow();
+    }
+    private void finish() {
+        Throwable failure = null;
+        try { close(); }
+        catch (Throwable error) { failure = error; }
+        try { ArtBoot.finishPendingWrites(); }
+        catch (Throwable error) { if (failure == null) failure = error; else failure.addSuppressed(error); }
+        if (failure != null) Log.e("StoneSession", "ART session cleanup failed", failure);
+        // APKs may keep Looper.loop() inside catch(Throwable) indefinitely.
+        // After cleanup, complete through the Client's normal native exit path.
+        complete(failure == null ? 0 : 1);
+        throw new IllegalStateException("Client session completion returned");
     }
     private void show() throws ReflectiveOperationException {
         if (window != null) return;
@@ -75,7 +84,7 @@ final class ArtSession {
                 } else if (command == 1 && !shutdown) show();
             }
             if (shutdown) {
-                if (ArtServices.jobs.idle() || SystemClock.uptimeMillis() >= shutdownDeadline) throw finished;
+                if (ArtServices.jobs.idle() || SystemClock.uptimeMillis() >= shutdownDeadline) { finish(); return; }
             } else if (!retiring) {
                 if (window == null && application.currentActivity(null) != null) show();
                 if (!canRetire()) idleSince = SystemClock.uptimeMillis();
@@ -87,7 +96,7 @@ final class ArtSession {
                         catch (RuntimeException error) { Log.w("StoneSession", "Idle retirement unavailable", error); }
                         final boolean exit = granted;
                         main.post(() -> {
-                            if (exit) { Log.i("StoneSession", "Idle Client retirement granted"); throw finished; }
+                            if (exit) { Log.i("StoneSession", "Idle Client retirement granted"); finish(); return; }
                             retiring = false; idleSince = SystemClock.uptimeMillis();
                         });
                     });

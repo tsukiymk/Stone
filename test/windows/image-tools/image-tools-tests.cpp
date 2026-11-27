@@ -260,7 +260,7 @@ Bytes Sparse(View bytes)
     return header;
 }
 
-Bytes Gpt(View bytes)
+Bytes Gpt(View bytes, const std::wstring& name = L"system_a")
 {
     Bytes image(4096);
     auto magic = Data("EFI PART");
@@ -271,13 +271,12 @@ Bytes Gpt(View bytes)
     image[1024] = 1;
     Put<int64_t>(image, 1056, 8);
     Put<int64_t>(image, 1064, 7 + bytes.size() / 512);
-    std::wstring name = L"system_a";
     std::memcpy(image.data() + 1080, name.data(), name.size() * 2);
     Append(image, bytes);
     return image;
 }
 
-Bytes Super(View bytes)
+Bytes Super(const std::map<std::string, Bytes>& partitions)
 {
     Bytes image(32768);
     U32At(image, 4096, 0x616c4467);
@@ -287,19 +286,31 @@ Bytes Super(View bytes)
     U32At(image, header, 0x414c5030);
     U16At(image, header + 4, 10);
     U32At(image, header + 8, 128);
-    U32At(image, header + 44, 76);
-    U32At(image, header + 84, 1);
+    U32At(image, header + 44, partitions.size() * 76);
+    U32At(image, header + 84, partitions.size());
     U32At(image, header + 88, 52);
-    U32At(image, header + 92, 52);
-    U32At(image, header + 96, 1);
+    U32At(image, header + 92, partitions.size() * 52);
+    U32At(image, header + 96, partitions.size());
     U32At(image, header + 100, 24);
-    auto name = Data("system_a");
-    std::copy(name.begin(), name.end(), image.begin() + table);
-    U32At(image, table + 44, 1);
-    Put<int64_t>(image, table + 52, bytes.size() / 512);
-    Put<int64_t>(image, table + 64, 64);
-    Append(image, bytes);
+    int i = 0;
+    for (const auto& [name, bytes] : partitions) {
+        Expect(name.size() < 36 && bytes.size() % 512 == 0, "Logical partition fixture");
+        auto row = table + i * 52;
+        auto extent = table + partitions.size() * 52 + i * 24;
+        std::copy(name.begin(), name.end(), image.begin() + row);
+        U32At(image, row + 40, i);
+        U32At(image, row + 44, 1);
+        Put<int64_t>(image, extent, bytes.size() / 512);
+        Put<int64_t>(image, extent + 12, image.size() / 512);
+        Append(image, bytes);
+        ++i;
+    }
     return image;
+}
+
+Bytes Super(View bytes)
+{
+    return Super({{"system_a", Bytes(bytes.begin(), bytes.end())}});
 }
 
 Bytes Erofs(View contents, bool inlined)
@@ -353,6 +364,37 @@ void Filesystems()
     std::copy_n(backup.data() + 12288, 4096, backup.data() + 20480);
     backup[12288] = 0;
     Expect(OpenPartition(OpenSystem(Memory(backup)))->Read("", "build.prop") == text, "Backup super metadata recovery");
+    auto product = Ext4(*Tree({{"provider.apk", Data("product")}}));
+    auto extension = Ext4(*Tree({{"provider.apk", Data("extension")}}));
+    auto logical = Super({{"system_a", ext4}, {"product_a", product}, {"system_ext", extension}});
+    for (const auto& bytes : {logical, Sparse(logical), Gpt(logical, L"super")}) {
+        for (const auto& name : {"product", "system_ext"}) {
+            auto selected = OpenImagePartition(Memory(bytes), name);
+            Expect(selected && OpenPartition(*selected)->Read("", "provider.apk") ==
+                                   Data(name == std::string("product") ? "product" : "extension"),
+                   "Named logical partition selection through raw/sparse/GPT containers");
+        }
+        Expect(OpenPartition(OpenSystem(Memory(bytes)))->Read("", "build.prop") == text,
+               "Named selection preserves the system partition");
+    }
+    auto direct = OpenImagePartition(Memory(Gpt(product, L"product_a")), "product");
+    Expect(direct && OpenPartition(*direct)->Read("", "provider.apk") == Data("product"), "Direct GPT product slot");
+    auto recovery = logical;
+    std::copy_n(recovery.data() + 12288, 4096, recovery.data() + 20480);
+    recovery[12288] = 0;
+    auto recovered = OpenImagePartition(Memory(recovery), "product");
+    Expect(recovered && OpenPartition(*recovered)->Read("", "provider.apk") == Data("product"),
+           "Backup metadata recovers the requested partition");
+    Expect(!OpenImagePartition(Memory(ext4), "product") && !OpenImagePartition(Memory(Super(ext4)), "product"),
+           "Absent product partition is not the system partition");
+    Reject([&] {
+        OpenImagePartition(Memory(logical), "../product");
+    });
+    auto broken = logical;
+    U32At(broken, 12288 + 128 + 40, 1000); // First entry is product_a.
+    Reject([&] {
+        OpenImagePartition(Memory(broken), "product");
+    });
     auto bad = Sparse(ext4);
     U32At(bad, 36, 12);
     Reject([&] {
@@ -464,9 +506,9 @@ void EndToEnd(const fs::path& root, const fs::path& executable)
         {"etc/classpaths/bootclasspath.pb", Jar("/apex/com.android.art/javalib/core-oj.jar")},
         {"javalib/core-oj.jar", {0x50, 0x4b}},
         {"bin/dex2oat64", Elf()}};
-    for (const auto* name :
-         {"libart.so", "libartpalette-system.so", "libjavacore.so", "libopenjdkjvm.so", "libopenjdk.so",
-          "libjavacrypto.so", "libjnigraphics.so", "libandroid.so", "libandroid_runtime.so", "libhwui.so"})
+    for (const auto* name : {"libart.so", "libartpalette-system.so", "libjavacore.so", "libopenjdkjvm.so",
+                             "libopenjdk.so", "libjavacrypto.so", "libjnigraphics.so", "libandroid.so",
+                             "libandroid_runtime.so", "libhwui.so", "libwebviewchromium_plat_support.so"})
         apexFiles[std::string("lib64/") + name] = Elf();
     auto apex = Zip("apex_payload.img", Ext4(*Tree(apexFiles)));
     std::map<std::string, Bytes> files{{"build.prop", Data("ro.build.version.sdk=37\n")},
@@ -475,13 +517,34 @@ void EndToEnd(const fs::path& root, const fs::path& executable)
                                        {"framework/framework-res.apk", {0x50, 0x4b}},
                                        {"usr/keychars/Virtual.kcm", {42}},
                                        {"fonts/font.ttf", {1, 2, 3}},
+                                       {"app/webview/webview.apk", Data("system webview")},
+                                       {"product/app/EmbeddedWebView/base.apk", Data("embedded webview")},
                                        {"apex/com.google.android.art.capex", Zip("original_apex", apex, false)}};
     auto tree = Tree(files);
     for (auto& child : tree->children)
         if (child->name == "fonts")
             Alias(*child, "alias.ttf", "/system/fonts/font.ttf");
     auto image = root / L"system.img", cache = root / L"cache", index = root / L"index.txt";
-    Write(image, Sparse(Ext4(*tree)));
+    auto productTree = Tree({{"app/WebViewGoogle64/WebViewGoogle64.apk", Data("product webview")},
+                             {"app/TrichromeLibrary64/TrichromeLibrary64.apk", Data("shared library")},
+                             {"app/WebViewGoogle64/lib/x86_64/libwebviewchromium.so", Elf()},
+                             {"lib64/libprovider.so", Elf()},
+                             {"app/Unrelated/Unrelated.apk", Data("unrelated")}});
+    Node* nativeDirectory = productTree.get();
+    for (const auto* part : {"app", "WebViewGoogle64", "lib", "x86_64"}) {
+        auto child =
+            std::find_if(nativeDirectory->children.begin(), nativeDirectory->children.end(), [&](const auto& node) {
+                return node->name == part;
+            });
+        Expect(child != nativeDirectory->children.end(), "Native provider fixture directory");
+        nativeDirectory = child->get();
+    }
+    Alias(*nativeDirectory, "librelative.so", "../../../../lib64/libprovider.so");
+    Alias(*nativeDirectory, "libabsolute.so", "/product/lib64/libprovider.so");
+    auto product = Ext4(*productTree);
+    auto extension = Ext4(*Tree({{"priv-app/AlternateWebView/base.apk", Data("extension webview")}}));
+    Write(image, Sparse(Gpt(Super({{"system_a", Ext4(*tree)}, {"product_a", product}, {"system_ext_a", extension}}),
+                            L"super")));
     SetEnvironmentVariableW(L"JAVA_HOME", L"C:\\stone-no-jdk");
     SetEnvironmentVariableW(L"DOTNET_ROOT", L"C:\\stone-no-dotnet");
     wchar_t system[32768]{};
@@ -494,8 +557,42 @@ void EndToEnd(const fs::path& root, const fs::path& executable)
                Data("/apex/com.android.art/javalib/core-oj.jar\n/system/framework/framework.jar\n"),
            "Boot classpath publication/order");
     Expect(Read(output / L"lib64/libart.so") == Elf(), "ART library bytes preserved");
+    Expect(Read(output / L"lib64/libwebviewchromium_plat_support.so") == Elf(),
+           "Image WebView platform support library bytes preserved");
+    for (const auto* name : {L"libwebviewchromium.so", L"librelative.so", L"libabsolute.so"})
+        Expect(Read(output / L"product/app/WebViewGoogle64/lib/x86_64" / name) == Elf(),
+               "Provider native files and image-contained library links preserve bytes");
     Expect(Read(output / L"system/fonts/alias.ttf") == Bytes({1, 2, 3}), "Font alias resolution");
+    Expect(Read(output / L"product/app/WebViewGoogle64/WebViewGoogle64.apk") == Data("product webview") &&
+               Read(output / L"product/app/TrichromeLibrary64/TrichromeLibrary64.apk") == Data("shared library"),
+           "WebView and Trichrome APK bytes preserved from the product partition");
+    Expect(Read(output / L"system/etc/stone-webview-apks.list") ==
+                   Data("/product/app/TrichromeLibrary64/TrichromeLibrary64.apk\n"
+                        "/product/app/WebViewGoogle64/WebViewGoogle64.apk\n/system/app/webview/webview.apk\n"
+                        "/system_ext/priv-app/AlternateWebView/base.apk\n") &&
+               Read(output / L"system_ext/priv-app/AlternateWebView/base.apk") == Data("extension webview") &&
+               !fs::exists(output / L"product/app/Unrelated/Unrelated.apk"),
+           "Deterministic WebView candidate list excludes unrelated and shadowed embedded packages");
     Expect(Native(executable, {L"--output-file", index, image, cache}) == 0, "Repeated native preparation");
+    Write(image, Sparse(Ext4(*tree)));
+    Expect(Native(executable, {L"--output-file", index, image, cache}) == 0 &&
+               Read(output / L"product/app/EmbeddedWebView/base.apk") == Data("embedded webview") &&
+               Read(output / L"system/etc/stone-webview-apks.list") ==
+                   Data("/product/app/EmbeddedWebView/base.apk\n/system/app/webview/webview.apk\n"),
+           "Single-partition images use embedded product and replace the candidate list");
+    files.erase("app/webview/webview.apk");
+    files.erase("product/app/EmbeddedWebView/base.apk");
+    Write(image, Sparse(Ext4(*Tree(files))));
+    Expect(Native(executable, {L"--output-file", index, image, cache}) == 0 &&
+               Read(output / L"system/etc/stone-webview-apks.list").empty(),
+           "Images without WebView publish an empty candidate list despite old cache files");
+    files["app/WebView/base.apk"] = Data("first");
+    files["app/webview/BASE.apk"] = Data("second");
+    Write(image, Sparse(Ext4(*Tree(files))));
+    fs::remove(index);
+    Expect(Native(executable, {L"--output-file", index, image, cache}) == 1 && !fs::exists(index) &&
+               Read(output / L"system/etc/stone-webview-apks.list").empty(),
+           "Case-colliding WebView APKs must not publish a root or candidate list");
     auto extracted = root / L"extracted.prop";
     Expect(Native(executable, {L"--extract-file", image, L"", L"build.prop", extracted}) == 0 &&
                Read(extracted) == files["build.prop"],

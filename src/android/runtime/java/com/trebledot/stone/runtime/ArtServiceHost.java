@@ -219,10 +219,10 @@ final class ArtServiceHost {
     private int bind(Object[] args) throws ReflectiveOperationException {
         owner((String) args[7], (Integer) args[8]);
         long flags = ((Number) args[5]).longValue();
-        if (args[6] != null || (flags & 0x80000000L) != 0) throw new UnsupportedOperationException("External and named service instances are not connected yet");
         Intent intent = (Intent) args[2];
         ServiceInfo info = resolve(intent);
         if (info == null) return 0;
+        if (args[6] != null || (flags & 0x80000000L) != 0) throw new UnsupportedOperationException("External and named service instances are not connected yet");
         Record record = services.get(new ComponentName(info.packageName, info.name));
         if (record == null && (flags & Context.BIND_AUTO_CREATE) == 0) return 0;
         if (record == null) record = obtain(info);

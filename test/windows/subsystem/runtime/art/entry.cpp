@@ -69,7 +69,7 @@ int wmain(int argc, wchar_t* argv[])
             << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --audio-codecs <stone-art-runtime.jar>\n";
         std::wcout << L"       stone-art-probe --capture-audio <pid> <output.wav> <milliseconds>\n";
         std::wcout
-            << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --storage <stone-art-runtime.jar> <write|read>\n";
+            << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --storage <stone-art-runtime.jar> <write|read|private-write|private-read>\n";
         std::wcout
             << L"       stone-art-probe <prepared-system-directory> <probe.dex> <sample.apk> --service <stone-art-runtime.jar> <service-class>\n";
         std::wcout
@@ -82,6 +82,8 @@ int wmain(int argc, wchar_t* argv[])
             << L"       stone-art-probe <prepared-system-directory> <probe.dex> <sample.apk> --jobs <stone-art-runtime.jar> <fixture|recover>\n";
         std::wcout
             << L"       stone-art-probe <prepared-system-directory> <probe.dex> <sample.apk> --native-libraries <stone-art-runtime.jar>\n";
+        std::wcout
+            << L"       stone-art-probe <prepared-system-directory> <probe.dex> <stone-cit.apk> --webview-providers <stone-art-runtime.jar>\n";
         std::wcout << L"       stone-art-probe --inspect <prepared-system-directory> <library.so>\n";
         std::wcout << L"       stone-art-probe --symbols <prepared-system-directory> <library.so>\n";
         std::wcout << L"       stone-art-probe --audit-imports <prepared-system-directory> <library.so>\n";
@@ -104,6 +106,7 @@ int wmain(int argc, wchar_t* argv[])
     const bool automaticUpdates = argc == 7 && std::wstring_view(argv[4]) == L"--automatic-updates";
     const bool foreground = argc == 7 && std::wstring_view(argv[4]) == L"--foreground";
     const bool nativeLibraries = argc == 6 && std::wstring_view(argv[4]) == L"--native-libraries";
+    const bool webViewProviders = argc == 6 && std::wstring_view(argv[4]) == L"--webview-providers";
     const bool resizeWindow = argc == 6 && std::wstring_view(argv[4]) == L"--resize-window";
     const bool startupNatives = argc == 6 && std::wstring_view(argv[4]) == L"--startup-natives";
     const bool videoCodecs = argc == 6 && std::wstring_view(argv[4]) == L"--video-codecs";
@@ -113,7 +116,7 @@ int wmain(int argc, wchar_t* argv[])
     const bool audioOutput = argc == 6 && (std::wstring_view(argv[4]) == L"--audio-output" || audioCodecs);
     if (argc < 3 || argc > 7 || (argc == 7 && !service && !foreground && !jobs && !automaticUpdates && !storage) ||
         (argc == 6 && !application && !battery && !nativeLibraries && !resizeWindow && !startupServices &&
-         !audioOutput) ||
+         !audioOutput && !webViewProviders) ||
         (argc == 5 && std::wstring_view(argv[4]) != L"--graphics" && std::wstring_view(argv[4]) != L"--resources")) {
         std::wcerr << L"Invalid arguments; use stone-art-probe --help.\n";
         return 2;
@@ -142,6 +145,10 @@ int wmain(int argc, wchar_t* argv[])
         }
         if (nativeLibraries) {
             stone::windows::test::TestArtNativeLibrariesSample(argv[1], argv[2], argv[3], argv[5]);
+            return 0;
+        }
+        if (webViewProviders) {
+            stone::windows::test::TestArtWebViewProviderSample(argv[1], argv[2], argv[3], argv[5]);
             return 0;
         }
         if (resizeWindow) {

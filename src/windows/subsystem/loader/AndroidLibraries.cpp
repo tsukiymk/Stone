@@ -285,8 +285,12 @@ Library& Prepare(LibraryNamespace& scope, const std::string& name, const Android
                 !scope.images.contains(dependency) && !staged.contains(dependency))
                 InstallNativeImageZlib(read);
             const auto system = SystemLibraryIndex(dependency);
-            const bool useImage =
-                (scope.imageMath && dependency == "libm.so") || (scope.imageLog && dependency == "liblog.so");
+            const bool useImage = (scope.imageMath && dependency == "libm.so") ||
+                                  (scope.imageLog && dependency == "liblog.so") ||
+                                  // libgui/HWUI exchange image-owned GraphicBuffer objects through
+                                  // their private dependency. Public dlopen handles still use the
+                                  // NDK bridge so host buffers never enter that image ABI.
+                                  (scope.artRuntime && dependency == "libnativewindow.so");
             if (system != SystemLibraryCount && !useImage) {
                 // Resolve platform imports to the existing host bridge. The
                 // translated leaf backend still rejects calls into those imports.
@@ -1122,6 +1126,27 @@ void* LoadArtDex2Oat()
     }
     const auto main = AndroidRuntimeFunction("dex2oat64", "main");
     return MakeNativeAndroidThunk(main, "(IL)I");
+}
+
+void SetArtPrivateLibraryRoot(const std::filesystem::path& dataDirectory, std::string_view guestData)
+{
+    auto& state = Process();
+    const std::lock_guard lock(state.mutex);
+    auto& scope = state.runtime;
+    if (!scope.artRuntime || !scope.read || state.translate)
+        throw std::runtime_error("private native libraries currently require x64 image ART");
+    const auto prefix = std::string(guestData) + "/";
+    if (!scope.applicationDataPrefix.empty()) {
+        if (scope.applicationDataPrefix != prefix)
+            throw std::runtime_error("private native library data identity changed");
+        return;
+    }
+    const auto imageReader = scope.read;
+    const auto privateRoot = std::filesystem::canonical(dataDirectory);
+    scope.read = [imageReader, privateRoot, prefix](const std::string& name) {
+        return name.starts_with(prefix) ? ReadAndroidPrivateLibrary(privateRoot, prefix, name) : imageReader(name);
+    };
+    scope.applicationDataPrefix = prefix;
 }
 
 void SetArtApplicationLibraries(const std::filesystem::path& directory, const std::filesystem::path& dataDirectory,

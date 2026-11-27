@@ -134,3 +134,73 @@ try {
 CTest component rules set the working directory and TEMP/TMP. Executables, input copies, working directories, TEMP/TMP, application data, caches, and outputs must remain under `bin/<architecture>/Debug/` for the actual architecture. The same isolation requirements apply when running tests or integration scripts directly. The `unit` label does not cover every component or application behavior; select names, labels, and integration drivers appropriate to the change.
 
 Configuration, compilation, and testing each require a zero exit code to succeed. Resolve build or link failures before testing; do not use old artifacts to validate new code. A successful build does not establish target-device or APK compatibility. See the [repository guidelines](../../AGENTS.md) for full isolation and acceptance requirements.
+
+### WebView provider and rendering checks
+
+The ART probe's `--webview-providers` mode exercises the image parser/verifier, update-service contracts, and declared network permissions. With a selected provider it loads HTML from its own loopback HTTP server and checks JavaScript, touch focus, committed text, button clicks, alpha drawing, navigation, reload, scrolling, and software pixels. After those interactions it requires at least 60 seconds of advancing animation and repeated pixel checks; the rendering scenario has a 180-second callback deadline. Images with only stubs exercise explicit unavailability instead. These checks require a Windows x64 Debug build and a complete x86_64 system image. Rendering additionally requires a provider supported by the [current loader](../runtime/art.md#webview-provider-selection-and-loading) and an interactive Windows session; selection alone does not establish rendering compatibility.
+
+From the repository root, configure tests and build the image tool, ART probe, runtime JAR, CIT APK, and signed archive fixtures:
+
+```powershell
+cmake --preset x64 -DSTONE_TESTS=ON
+if ($LASTEXITCODE -ne 0) { throw 'Test configuration failed.' }
+cmake --build build/x64 --config Debug --target StoneImageTool stone-art-webview-tests -- /restore
+if ($LASTEXITCODE -ne 0) { throw 'WebView test build failed.' }
+```
+
+Create `bin/x64/Debug/test/webview/input/` and copy the selected system image there as `system.img`. Keep the generated fixture layout: the probe reads signature fixtures from the `archives/` directory beside `art-probe/`. The following commands prepare that image and run the probe with all five required arguments. They isolate the working directory, data, caches, logs, and temporary files under the Debug test tree and restore environment overrides afterward:
+
+```powershell
+$debugRoot = (Resolve-Path 'bin/x64/Debug').Path
+$testRoot = Join-Path $debugRoot 'test/webview'
+$image = (Resolve-Path (Join-Path $testRoot 'input/system.img')).Path
+$overrides = @{
+    TEMP = Join-Path $testRoot 'temp'
+    TMP = Join-Path $testRoot 'temp'
+    LOCALAPPDATA = Join-Path $testRoot 'local'
+    STONE_LOG_DIRECTORY = Join-Path $testRoot 'logs'
+    STONE_ART_DATA_DIRECTORY = Join-Path $testRoot 'data'
+}
+$savedEnvironment = @{}
+foreach ($name in $overrides.Keys) {
+    $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    New-Item -ItemType Directory -Path $overrides[$name] -Force | Out-Null
+}
+Push-Location $testRoot
+try {
+    foreach ($name in $overrides.Keys) {
+        [Environment]::SetEnvironmentVariable($name, $overrides[$name], 'Process')
+    }
+    $index = Join-Path $testRoot 'prepared-root.txt'
+    & "$debugRoot/StoneImageTool.exe" --output-file $index $image "$testRoot/cache"
+    if ($LASTEXITCODE -ne 0) { throw 'Image preparation failed.' }
+    $prepared = (Get-Content -LiteralPath $index -Raw).Trim()
+    & "$debugRoot/test/subsystem/Debug/stone-art-probe.exe" `
+        $prepared "$debugRoot/test/fixtures/art-probe/classes.dex" `
+        "$debugRoot/test/fixtures/cit/stone-cit.apk" --webview-providers `
+        "$debugRoot/stone-art-runtime.jar"
+    if ($LASTEXITCODE -ne 0) { throw 'WebView provider or rendering check failed.' }
+} finally {
+    Pop-Location
+    foreach ($name in $overrides.Keys) {
+        [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')
+    }
+}
+```
+
+On successful rendering, the probe writes `test/webview/data/webview-render/frame.png` under the Debug directory. An unavailable-provider result does not exercise page rendering. Record the image identity, provider identity, execution options, and observed outcome when reporting results.
+
+The general `ctest -L unit` command does not run this image-dependent check. To register it with CTest, configure `STONE_CORE_ART_DIRECTORY`, `STONE_CORE_ART_DEX`, and `STONE_CORE_ART_CIT_APK` with absolute paths under the Debug tree and enable `STONE_CORE_ART_APPLICATION=ON`. After rebuilding, run `ctest --test-dir test/ctest/Debug -C Debug -R '^stone-art-webview-providers$' --no-tests=error --output-on-failure` from `bin/x64/Debug/`. CTest uses `test/art-webview-providers/` for `/data`, separately from the direct invocation above.
+
+## ART session retirement check
+
+Build `StoneClient`, `StoneService`, and `stone-session-exit-fixtures` in x64 Debug, then run the image-dependent retirement driver from the repository root. Copy the selected system image under the Debug test tree first.
+
+```powershell
+pwsh -File test/windows/integration/art/RunSessionExit.ps1 `
+    -RuntimeDirectory bin/x64/Debug `
+    -FixtureApk bin/x64/Debug/test/fixtures/session-exit/session-exit.apk `
+    -SystemImage bin/x64/Debug/test/session-exit/input/system.img
+```
+
+The driver leases the shared Windows test runtime and keeps its profile, temporary files, and logs under `bin/x64/Debug/test/session-exit/`. It prepares the image in a real cache directory on the first run and reuses that cache for subsequent cases, retaining separate log copies for each case. It checks ordinary and nested main Loopers, a non-daemon APK worker, queued-write completion, cleanup failure reporting, and Service shutdown. Successful retirement must exit naturally with code 0; the injected cleanup failure must return 1. The launch timing JSON records `forcedTermination` separately so test cleanup cannot count as successful retirement. These cases use `RunLaunch.ps1 -SkipDuplicate` to test retirement independently of duplicate-launch rejection.

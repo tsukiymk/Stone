@@ -52,6 +52,21 @@ public final class BatterySample {
             .getIntExtra(BatteryManager.EXTRA_LEVEL, -2) == hostLevel, "sticky snapshots are copies");
         check(manager.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) == Long.MIN_VALUE,
             "unsupported energy telemetry must remain unknown");
+        PowerManager power=context.getSystemService(PowerManager.class);
+        check(power.getCurrentThermalStatus()==PowerManager.THERMAL_STATUS_NONE,"Android no-thermal-HAL status");
+        check(Float.isNaN(power.getThermalHeadroom(0)),"thermal headroom remains unavailable");
+        List<Integer> thermal=new ArrayList<>();
+        PowerManager.OnThermalStatusChangedListener thermalListener=thermal::add;
+        power.addThermalStatusListener(Runnable::run,thermalListener);
+        try {
+            await(() -> !thermal.isEmpty());
+            check(thermal.size()==1 && thermal.get(0)==PowerManager.THERMAL_STATUS_NONE,"initial no-HAL status callback");
+            try { power.addThermalStatusListener(Runnable::run,thermalListener); throw new AssertionError("duplicate thermal listener"); }
+            catch(IllegalArgumentException expected) {}
+        } finally { power.removeThermalStatusListener(thermalListener); }
+        try { power.removeThermalStatusListener(thermalListener); throw new AssertionError("unknown thermal listener"); }
+        catch(IllegalArgumentException expected) {}
+        System.out.println("PASS no-thermal-HAL status, initial listener delivery, removal and unknown headroom");
         List<Intent> received = new ArrayList<>(); List<Boolean> sticky = new ArrayList<>();
         BroadcastReceiver receiver = new BroadcastReceiver() {
             public void onReceive(Context owner, Intent intent) {

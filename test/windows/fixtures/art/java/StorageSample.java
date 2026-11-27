@@ -17,10 +17,33 @@ import java.util.List;
 public final class StorageSample {
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
     public static int run(AssetManager assets, String stage) throws Exception {
-        check(stage.equals("write") || stage.equals("read"), "Unknown storage probe stage");
-        ArtPackage apk = ArtPackage.open(assets, "/data/application.apk", "/data/apps/storage-probe");
+        boolean privateStorage = stage.equals("private-write") || stage.equals("private-read");
+        check(privateStorage || stage.equals("write") || stage.equals("read"), "Unknown storage probe stage");
+        boolean write = stage.equals("write") || stage.equals("private-write");
+        ArtPackage apk = ArtPackage.openApplication(assets, "/data/application.apk");
         ArtApplication application = ArtApplication.start(apk);
         Context context = application.context;
+        PackageStoreProbe.run(application);
+        check(context.getPackageManager().getInstallerPackageName(context.getPackageName()) == null,
+            "Direct APK launch must not fabricate an installing package");
+        Context device = context.createDeviceProtectedStorageContext();
+        check(device.isDeviceProtectedStorage() && device.getDataDir().isDirectory(), "Device-protected data root unavailable");
+        check(!context.getDataDir().equals(device.getDataDir()) && device.getFilesDir().isDirectory()
+            && device.getCacheDir().isDirectory(), "Device-protected storage directories unavailable or shared");
+        android.content.SharedPreferences preferences = device.getSharedPreferences("storage-restart", Context.MODE_PRIVATE);
+        File deviceFile = new File(device.getFilesDir(), "storage-restart.bin");
+        byte[] deviceMarker = "Stone device-protected storage restart".getBytes("UTF-8");
+        if (write) {
+            check(!preferences.contains("persisted") && !deviceFile.exists(), "Write stage requires fresh device-protected data");
+            check(preferences.edit().putString("persisted", "device-protected").commit(), "Device-protected preferences commit failed");
+            Files.write(deviceFile.toPath(), deviceMarker);
+        }
+        check("device-protected".equals(preferences.getString("persisted", null))
+            && Arrays.equals(Files.readAllBytes(deviceFile.toPath()), deviceMarker), "Device-protected data was not retained");
+        check(!context.getSharedPreferences("storage-restart", Context.MODE_PRIVATE).contains("persisted"),
+            "Device-protected preferences leaked into credential-protected storage");
+        System.out.println("PASS device-protected directories, preferences and file bytes, " + stage + " stage; install-source query contracts.");
+        if (privateStorage) return 42;
         File root = Environment.getExternalStorageDirectory();
         StorageManager manager = context.getSystemService(StorageManager.class);
         List<StorageVolume> volumes = manager.getStorageVolumes();

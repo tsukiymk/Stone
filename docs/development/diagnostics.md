@@ -35,9 +35,11 @@ A restricted logcat dump is supported for the application's own UID. Exports use
 
 ## Software frames and thread information
 
-`STONE_ART_DIAGNOSTICS=1` enables output under `data/stone-diagnostics/<package>/` in the application data root. `frame.png` is a software frame; `state.txt` contains the current Activity, configuration, and ordinary View state. For Compose, use the actual image as the reference.
+`STONE_ART_DIAGNOSTICS=1` enables output under `data/stone-diagnostics/<package>/` in the application data root. `frame.png` is a software frame; `state.txt` contains the current Activity, configuration, and ordinary View state, including View and window focus. For Compose, use the actual image as the reference.
 
 In the same directory, `capture.request` requests the next frame and `threads.request` requests a Java thread snapshot. `FLAG_SECURE` masks protected content; diagnostics cannot bypass [capture protection](../android/graphics-input.md#capture-protection).
+
+When frames stop advancing for at least one second, the watchdog appends main-thread samples to `stalls.txt`, up to 120 samples per window loop. Its first sample also replaces `stalled-threads.txt` with a Java thread snapshot, so collecting it does not depend on the stalled main loop servicing a request. Files can survive later launches; check their modification times and sample uptimes before attributing a stall to the current run.
 
 ## Performance and experimental options
 

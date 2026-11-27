@@ -112,6 +112,29 @@ std::filesystem::path systemCa;
 std::filesystem::path conscryptCa;
 std::filesystem::path procDirectory;
 std::string programName = "Stone";
+std::mutex processNameMutex;
+std::string processName = "Stone";
+int OpenProcCommandLine(int flags);
+
+bool IsOwnProcPath(std::string_view path, std::string_view file)
+{
+    constexpr std::string_view prefix = "/proc/";
+    if (!path.starts_with(prefix) || !path.ends_with(file))
+        return false;
+    path.remove_prefix(prefix.size());
+    if (path.size() <= file.size())
+        return false;
+    path.remove_suffix(file.size());
+    if (path == "self")
+        return true;
+    if (path.front() == '0')
+        return false;
+    DWORD pid = 0;
+    const auto end = path.data() + path.size();
+    const auto parsed = std::from_chars(path.data(), end, pid);
+    return parsed.ec == std::errc{} && parsed.ptr == end && pid == GetCurrentProcessId();
+}
+
 std::mutex randomDevicesMutex;
 std::unordered_set<int> randomDevices;
 constexpr int GuestDescriptorLimit = 8192; // UCRT low-I/O table size.
@@ -127,7 +150,13 @@ enum FdSanLevel {
 };
 
 std::array<std::atomic<uint64_t>, GuestDescriptorLimit> fdOwnerTags{};
+std::array<std::atomic<bool>, GuestDescriptorLimit> procCommandLines{};
 std::atomic<int> fdSanLevel{FdSanFatal};
+
+bool IsProcCommandLineDescriptor(int fd)
+{
+    return fd >= 0 && fd < GuestDescriptorLimit && procCommandLines[fd].load();
+}
 
 std::atomic<uint64_t>* FdOwnerTagSlot(int fd)
 {
@@ -297,6 +326,8 @@ std::filesystem::path MapGuestPath(const char* path, bool writable)
     if (!path)
         throw AndroidSystemPathError{EFAULT};
     std::string_view name(path);
+    if (writable && IsOwnProcPath(name, "/cmdline"))
+        throw AndroidSystemPathError{EACCES};
     if (!procDirectory.empty() && (name == "/proc/meminfo" || name == "/proc/cpuinfo")) {
         if (writable)
             throw AndroidSystemPathError{EROFS};
@@ -357,6 +388,8 @@ std::filesystem::path GuestPath(const char* path, bool writable = false, bool fo
     if (!path)
         throw AndroidSystemPathError{EFAULT};
     const std::string_view name(path);
+    if (writable && IsOwnProcPath(name, "/cmdline"))
+        throw AndroidSystemPathError{EACCES};
     if (name == "/dev/null" ||
         (!procDirectory.empty() &&
          (name == "/proc/meminfo" || name == "/proc/cpuinfo" || name == "/sys/devices/system/cpu/present" ||
@@ -844,6 +877,12 @@ int RemoveGuestPath(const wchar_t* path, bool allowDirectory)
 
 int OpenDescriptor(const char* path, int flags, int permission)
 {
+    if (!path) {
+        errno = EFAULT;
+        return -1;
+    }
+    if (IsOwnProcPath(path, "/cmdline"))
+        return OpenProcCommandLine(flags);
     if (IsRandomDevice(path)) {
         if ((flags & 3) != 0) {
             errno = EACCES;
@@ -1581,6 +1620,7 @@ int DuplicateDescriptor3(int source, int target, int flags)
     _set_thread_local_invalid_parameter_handler(previous);
     if (duplicated < 0)
         return -1;
+    procCommandLines[target].store(false);
     if (hadTarget)
         ForgetByteLocks(oldIdentity);
     memoryFiles.erase(target);
@@ -1593,6 +1633,7 @@ int DuplicateDescriptor3(int source, int target, int flags)
     try {
         if (memory)
             memoryFiles.emplace(target, memory);
+        procCommandLines[target].store(IsProcCommandLineDescriptor(source));
     }
     catch (const std::bad_alloc&) {
         _close(target);
@@ -1629,6 +1670,7 @@ int DuplicateDescriptor(int source, int minimum, bool closeOnExec, bool allowSpe
     try {
         if (memory)
             memoryFiles.emplace(duplicate, memory);
+        procCommandLines[duplicate].store(IsProcCommandLineDescriptor(source));
         return duplicate;
     }
     catch (const std::bad_alloc&) {
@@ -3364,6 +3406,8 @@ int CloseFileStream(void* guestFile)
                          ? 0
                          : MakeFdOwnerTag(FileOwner, reinterpret_cast<uintptr_t>(file));
     CheckFdOwnerClose(fd, tag);
+    if (fd >= 0 && fd < GuestDescriptorLimit)
+        procCommandLines[fd].store(false);
     if (fd >= 0)
         ForgetByteLocks(FileDescriptorHandle(fd));
     {
@@ -3411,6 +3455,12 @@ template <typename Stat = AndroidStat> int StatFile(int fd, Stat* result)
     if (_fstat64(fd, &value) < 0)
         return -1;
     CopyStat(value, *result);
+    if (IsProcCommandLineDescriptor(fd)) {
+        result->mode = 0100444;
+        result->uid = result->gid = AndroidApplicationUid();
+        result->size = result->blocks = 0;
+        result->links = 1;
+    }
     FileIdentity identity;
     const auto handle = FileDescriptorHandle(fd);
     if (handle != INVALID_HANDLE_VALUE && ReadFileIdentity(handle, identity)) {
@@ -3666,19 +3716,7 @@ char* Realpath(const char* path, char* output)
 
 bool IsOwnExecutableLink(std::string_view path)
 {
-    if (path == "/proc/self/exe")
-        return true;
-    constexpr std::string_view prefix = "/proc/", suffix = "/exe";
-    if (path.size() <= prefix.size() + suffix.size() || !path.starts_with(prefix) || !path.ends_with(suffix))
-        return false;
-    path.remove_prefix(prefix.size());
-    path.remove_suffix(suffix.size());
-    if (path.front() == '0')
-        return false;
-    DWORD pid = 0;
-    const auto end = path.data() + path.size();
-    const auto parsed = std::from_chars(path.data(), end, pid);
-    return parsed.ec == std::errc{} && parsed.ptr == end && pid == GetCurrentProcessId();
+    return IsOwnProcPath(path, "/exe");
 }
 
 std::shared_ptr<MemoryFile> MemoryFileLink(std::string_view path)
@@ -3721,20 +3759,24 @@ intptr_t ReadGuestLink(const char* path, char* output, size_t capacity)
         return -1;
     }
     try {
+        if (IsOwnProcPath(path, "/cmdline")) {
+            errno = EINVAL; // cmdline is a regular proc file, not a symbolic link.
+            return -1;
+        }
         if (const auto memory = MemoryFileLink(path)) {
             const auto link = "/memfd:" + memory->name + " (deleted)";
             const auto copied = std::min(capacity, link.size());
             std::memcpy(output, link.data(), copied);
             return static_cast<intptr_t>(copied);
         }
-        const std::filesystem::path input(std::u8string_view(reinterpret_cast<const char8_t*>(path)));
-        if (const auto system = AndroidSystemGuestPath(input); system && IsAndroidSystemGuestReadOnly(*system)) {
-            const auto link = std::filesystem::path(ReadAndroidSystemLink(*system)).u8string();
-            const auto copied = std::min(capacity, link.size());
-            std::memcpy(output, link.data(), copied);
-            return static_cast<intptr_t>(copied);
-        }
         if (!IsOwnExecutableLink(path)) {
+            const std::filesystem::path input(std::u8string_view(reinterpret_cast<const char8_t*>(path)));
+            if (const auto system = AndroidSystemGuestPath(input); system && IsAndroidSystemGuestReadOnly(*system)) {
+                const auto link = std::filesystem::path(ReadAndroidSystemLink(*system)).u8string();
+                const auto copied = std::min(capacity, link.size());
+                std::memcpy(output, link.data(), copied);
+                return static_cast<intptr_t>(copied);
+            }
             const auto host = GuestPath(path, false, false);
             const auto link = ReadAndroidSymbolicLink(host);
             if (!link) {
@@ -3783,6 +3825,14 @@ template <typename Stat = AndroidStat> int StatAt(int fd, const char* path, Stat
     if (flags & ~0x100) {
         errno = EINVAL;
         return -1;
+    }
+    if (path && IsOwnProcPath(path, "/cmdline")) {
+        *result = {};
+        result->mode = 0100444;
+        result->uid = result->gid = AndroidApplicationUid();
+        result->links = 1;
+        result->blockSize = 4096;
+        return 0;
     }
     return WithPathAt(
         fd, path,
@@ -3920,6 +3970,8 @@ template <typename Source> int StatVfs(Source source, AndroidStatVfs* result)
 
 int OpenAt(int fd, const char* path, int flags, int mode)
 {
+    if (!path || IsOwnProcPath(path, "/cmdline"))
+        return OpenDescriptor(path, flags, mode);
     if (IsRandomDevice(path))
         return OpenDescriptor(path, flags, mode);
     const auto open = [&](const wchar_t* wide) {
@@ -5477,6 +5529,21 @@ FILE* OpenFile(const char* path, const char* mode)
         binaryMode[used++] = 'x';
     if (std::strchr(mode, 'e'))
         binaryMode[used++] = 'N';
+    if (path && IsOwnProcPath(path, "/cmdline")) {
+        if (*mode != 'r' || std::strchr(mode, '+')) {
+            errno = EACCES;
+            return nullptr;
+        }
+        const int fd = OpenProcCommandLine(std::strchr(mode, 'e') ? 0x80000 : 0);
+        if (fd < 0)
+            return nullptr;
+        FILE* file = _fdopen(fd, "rb");
+        if (!file) {
+            procCommandLines[fd].store(false);
+            _close(fd);
+        }
+        return TagFileStream(file);
+    }
     try {
         const auto wide = GuestPath(path, *mode != 'r' || std::strchr(mode, '+'), std::strchr(mode, 'x') == nullptr);
         if (std::strchr(mode, 'x') && GetFileAttributesW(wide.c_str()) != INVALID_FILE_ATTRIBUTES) {
@@ -5554,6 +5621,71 @@ FILE* OpenTemporaryStream()
     if (!stream)
         _close(fd);
     return TagFileStream(stream);
+}
+
+int OpenProcCommandLine(int flags)
+{
+    constexpr int Access = 3, Create = 0x40, Exclusive = 0x80, Truncate = 0x200, Append = 0x400;
+    constexpr int Nonblocking = 0x800, LargeFile = 0x8000, Directory = 0x10000, NoFollow = 0x20000;
+    constexpr int CloseOnExec = 0x80000;
+    if ((flags & Access) == Access || (flags & ~(Access | Create | Exclusive | Truncate | Append | Nonblocking |
+                                                 LargeFile | Directory | NoFollow | CloseOnExec))) {
+        errno = EINVAL;
+        return -1;
+    }
+    if ((flags & (Create | Exclusive)) == (Create | Exclusive)) {
+        errno = EEXIST;
+        return -1;
+    }
+    if (flags & Directory) {
+        errno = ENOTDIR;
+        return -1;
+    }
+    if (flags & (Access | Truncate | Append)) {
+        errno = EACCES;
+        return -1;
+    }
+    try {
+        std::string contents;
+        {
+            const std::lock_guard lock(processNameMutex);
+            contents = processName;
+        }
+        contents.push_back('\0');
+        int writer = OpenTemporaryDescriptor(true);
+        if (writer < 0)
+            return -1;
+        const auto close = [](int* fd) {
+            _close(*fd);
+        };
+        const std::unique_ptr<int, decltype(close)> guard(&writer, close);
+        const int written = _write(writer, contents.data(), static_cast<unsigned>(contents.size()));
+        if (written < 0)
+            return -1;
+        if (static_cast<size_t>(written) != contents.size()) {
+            errno = EIO;
+            return -1;
+        }
+        if (_lseeki64(writer, 0, SEEK_SET) < 0)
+            return -1;
+        // Reduce kernel handle rights as well as CRT access. Closing the last
+        // reader deletes the temporary backing file, including on process exit.
+        HANDLE reader = nullptr;
+        if (!DuplicateHandle(GetCurrentProcess(), FileDescriptorHandle(writer), GetCurrentProcess(), &reader,
+                             FILE_GENERIC_READ, !(flags & CloseOnExec), 0))
+            return HostFileError(GetLastError());
+        const int fd = _open_osfhandle(reinterpret_cast<intptr_t>(reader),
+                                       _O_RDONLY | _O_BINARY | ((flags & CloseOnExec) ? _O_NOINHERIT : 0));
+        if (fd < 0)
+            CloseHandle(reader);
+        else
+            procCommandLines[fd].store(true);
+        return fd;
+    }
+    catch (const std::bad_alloc&) {
+        errno = ENOMEM;
+        return -1;
+    }
 }
 
 int CreateMemoryFile(const char* name, unsigned flags)
@@ -5875,6 +6007,8 @@ void CloseQueuedAndroidFd(int fd)
     // the process's POSIX record locks as closing a guest-visible descriptor does.
     const std::lock_guard lock(memoryFilesMutex);
     memoryFiles.erase(fd);
+    if (fd >= 0 && fd < GuestDescriptorLimit)
+        procCommandLines[fd].store(false);
     _close(fd);
 }
 
@@ -5957,6 +6091,8 @@ int AndroidGetHostname(char* output, size_t size)
 
 void ForgetAndroidFileDescriptor(int fd)
 {
+    if (fd >= 0 && fd < GuestDescriptorLimit)
+        procCommandLines[fd].store(false);
     if (const auto slot = FdOwnerTagSlot(fd))
         slot->store(0);
     if (fd >= 0)
@@ -6439,6 +6575,14 @@ void SetAndroidSystemCaDirs(std::wstring system, std::wstring conscrypt)
 void SetAndroidProcDirectory(std::wstring directory)
 {
     procDirectory = std::move(directory);
+}
+
+void SetAndroidProcessName(std::string name)
+{
+    if (name.empty() || name.size() >= 4096 || name.find('\0') != name.npos)
+        throw std::invalid_argument("invalid Android process name");
+    const std::lock_guard lock(processNameMutex);
+    processName = std::move(name);
 }
 
 int AndroidClock(int clock, AndroidTimespec* result)
@@ -7793,6 +7937,17 @@ uintptr_t AndroidLibcImport(std::string_view name, bool hostAbi)
     BIND(timegm, &TimeInUtc);
     BIND(
         access, +[](const char* path, int mode) {
+            if (path && IsOwnProcPath(path, "/cmdline")) {
+                if (mode & ~7) {
+                    errno = EINVAL;
+                    return -1;
+                }
+                if (mode & 3) {
+                    errno = EACCES;
+                    return -1;
+                }
+                return 0;
+            }
             const auto access = [&](const wchar_t* wide) {
                 return _waccess(wide, mode & 6);
             };

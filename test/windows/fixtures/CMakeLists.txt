@@ -84,10 +84,11 @@ set_property(GLOBAL APPEND PROPERTY STONE_FIXTURE_TARGETS stone-art-video-fixtur
 stone_fixture(stone-cit-apk cit cit stone-cit.apk)
 stone_fixture(stone-job-fixtures jobs jobs jobs.apk)
 stone_fixture(stone-foreground-fixtures foreground foreground foreground.apk)
+stone_fixture(stone-session-exit-fixtures session-exit session-exit session-exit.apk)
 stone_fixture(stone-activity-route-fixtures activity-routes activity-routes source.apk target.apk)
 stone_fixture(stone-resize-fixtures resize resize default-23.apk default-24.apk app-false.apk
     activity-true.apk activity-false.apk resource-true.apk alias.apk)
-stone_fixture(stone-archive-fixtures archives archives expected.properties launch.apk v1.apk v2.apk v3.apk
+stone_fixture(stone-archive-fixtures archives archives expected.properties launch.apk launcher.apk v1.apk v2.apk v3.apk
     future.apk native-32.apk
     rotated.apk rotated-no-data.apk multi.apk unsigned.apk truncated.apk
     tampered-v1.apk tampered-v2.apk tampered-v3.apk tampered-rotated.apk tampered-multi.apk)

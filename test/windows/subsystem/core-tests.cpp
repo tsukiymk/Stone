@@ -49,6 +49,13 @@ int wmain(int argc, wchar_t** argv)
             TestInotifyStorage(suite);
             return suite.Finish();
         }
+        if (group == L"proc-cmdline" && argc == 2) {
+            Suite suite("Current Android process command line");
+            STONE_CHECK(stone::windows::InitializeAndroidNativeBackend());
+            TestProcCommandLine(suite);
+            STONE_CHECK(GetModuleHandleW(L"jvm.dll") == nullptr);
+            return suite.Finish();
+        }
         if (group == L"allocation" && argc == 2) {
             // Pure allocator checks need neither Service startup nor sockets.
             Suite suite("Guest allocation ownership");

@@ -148,6 +148,9 @@ public final class ArtPackage implements Closeable {
                     throw new IOException("Managed APK changed before the application lock was acquired");
             }
             if (!data.isDirectory() && !data.mkdirs()) throw new IOException("Cannot create application data: " + data);
+            File deviceProtectedData = new File(data, "device-protected");
+            if (!deviceProtectedData.isDirectory() && !deviceProtectedData.mkdirs())
+                throw new IOException("Cannot create device-protected application data: " + deviceProtectedData);
             ArtComponentSettings components = new ArtComponentSettings(application.packageName, data, manifest.components);
             ActivityInfo activity = manifest.launcher(components);
             if (activity == null) throw new IOException("APK has no enabled MAIN/LAUNCHER activity");
@@ -155,7 +158,7 @@ public final class ArtPackage implements Closeable {
             application.sourceDir = source.getPath();
             application.publicSourceDir = source.getPath();
             application.dataDir = data.getPath();
-            application.deviceProtectedDataDir = new File(data, "device-protected").getPath();
+            application.deviceProtectedDataDir = deviceProtectedData.getPath();
             manifest.providers.sort(Comparator.comparingInt((ProviderInfo info) -> info.initOrder).reversed());
             manifest.info.applicationInfo = application;
             manifest.info.activities = manifest.activities.stream().map(entry -> entry.info).toArray(ActivityInfo[]::new);
@@ -394,6 +397,10 @@ public final class ArtPackage implements Closeable {
                     ? new android.content.pm.Signature[]{signing.getSigningCertificateHistory()[0]}
                     : signing.getApkContentsSigners().clone();
         }
+        if(result.requestedPermissions!=null && result.requestedPermissionsFlags!=null)
+            for(int index=0;index<result.requestedPermissions.length;index++)
+                if(ArtPermissions.networkGranted(result,result.requestedPermissions[index]))
+                    result.requestedPermissionsFlags[index]|=PackageInfo.REQUESTED_PERMISSION_GRANTED;
         return result;
     }
 

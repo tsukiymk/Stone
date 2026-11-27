@@ -456,6 +456,7 @@ public final class ArtApplication {
         Class<?> contextType = Class.forName("android.app.ContextImpl");
         if (android.os.Looper.myLooper() == null || android.os.Looper.myLooper() != android.os.Looper.getMainLooper())
             throw new IllegalStateException("ART application startup requires the main Looper thread");
+        ArtBoot.setProcessName(ArtProcess.current(apk));
         ArtRuntimeInit.initialize();
         ArtPackageEvents packageEvents = null;
         ArtServices.install(apk, classLoader);
@@ -501,6 +502,7 @@ public final class ArtApplication {
                 name == null ? "android.app.Application" : name, context);
             field(loadedType, "mApplication").set(loaded, application);
             field(threadType, "mInitialApplication").set(thread, application);
+            ArtServices.initializeWebView(application,apk);
             ((List<Application>) field(threadType, "mAllApplications").get(thread)).add(application);
             invoke(contextType, context, "setOuterContext", new Class<?>[]{Context.class}, application);
             List<ProviderInfo> providers = apk.localProviders();
@@ -523,6 +525,24 @@ public final class ArtApplication {
             field(threadType, "sMainThreadHandler").set(null, null);
             throw failure;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    static Context imageCodeContext(Application application,android.content.pm.ApplicationInfo info,ClassLoader loader)
+            throws ReflectiveOperationException {
+        Class<?> threadType=Class.forName("android.app.ActivityThread"), loadedType=Class.forName("android.app.LoadedApk");
+        Class<?> compatibility=Class.forName("android.content.res.CompatibilityInfo");
+        Object thread=field(threadType,"sCurrentActivityThread").get(null);
+        if(thread==null) throw new IllegalStateException("Image code context requires the application thread");
+        Object loaded=construct(loadedType,new Class<?>[]{threadType,android.content.pm.ApplicationInfo.class,
+            compatibility,ClassLoader.class,boolean.class,boolean.class,boolean.class},thread,info,
+            field(compatibility,"DEFAULT_COMPATIBILITY_INFO").get(null),loader,false,true,false);
+        field(loadedType,"mClassLoader").set(loaded,loader);
+        field(loadedType,"mDefaultClassLoader").set(loaded,loader);
+        ((Map<String,WeakReference<Object>>)field(threadType,"mPackages").get(thread))
+            .put(info.packageName,new WeakReference<>(loaded));
+        return (Context)Context.class.getMethod("createApplicationContext",android.content.pm.ApplicationInfo.class,int.class)
+            .invoke(application,info,Context.CONTEXT_INCLUDE_CODE|Context.CONTEXT_IGNORE_SECURITY);
     }
 
     private static void installSettings(Object thread, Context context, ArtPackage apk) throws ReflectiveOperationException {

@@ -90,6 +90,8 @@ add_custom_target(stone-art-test-runtime
     COMMENT "Installing graphics runtime for ART tests" USES_TERMINAL VERBATIM)
 set_target_properties(stone-art-test-runtime PROPERTIES FOLDER "Tests/Subsystem")
 add_dependencies(stone-art-probe stone-art-test-runtime)
+add_custom_target(stone-art-webview-tests DEPENDS stone-art-probe stone-art-probe-dex stone-cit-apk stone-archive-fixtures)
+set_target_properties(stone-art-webview-tests PROPERTIES FOLDER "Tests/Subsystem")
 foreach(target stone-art-probe)
     target_compile_options(${target} PRIVATE /utf-8)
     target_link_libraries(${target} PRIVATE stone-art-test-support stone-host)
@@ -178,6 +180,11 @@ if(STONE_CORE_ART_DIRECTORY AND STONE_CORE_ART_DEX)
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --startup-natives "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
             set_tests_properties(stone-art-startup-natives PROPERTIES LABELS "core;art;application;startup" TIMEOUT 60)
+            add_test(NAME stone-art-webview-providers COMMAND stone-art-probe
+                "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
+                --webview-providers "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
+            set_tests_properties(stone-art-webview-providers PROPERTIES LABELS "core;art;application;webview" TIMEOUT 240
+                ENVIRONMENT "STONE_ART_DATA_DIRECTORY=${STONE_TEST_ROOT}/art-webview-providers")
             add_test(NAME stone-art-video-codecs COMMAND stone-art-probe
                 "${STONE_CORE_ART_DIRECTORY}" "${STONE_CORE_ART_DEX}" "${STONE_CORE_ART_CIT_APK}"
                 --video-codecs "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stone-art-runtime.jar")
@@ -269,7 +276,7 @@ endforeach()
 add_test(NAME stone-core-external COMMAND stone-core-tests external)
 set_tests_properties(stone-core-external PROPERTIES LABELS "core;external" TIMEOUT 60)
 
-foreach(group hle allocation local-listener-probe inotify-storage external-local arm64-profile arm64-block arm64-dispatch)
+foreach(group hle allocation local-listener-probe inotify-storage proc-cmdline external-local arm64-profile arm64-block arm64-dispatch)
     add_test(NAME stone-core-${group} COMMAND stone-core-tests ${group})
     set_tests_properties(stone-core-${group} PROPERTIES LABELS "core;native-layers;unit" TIMEOUT 60)
 endforeach()

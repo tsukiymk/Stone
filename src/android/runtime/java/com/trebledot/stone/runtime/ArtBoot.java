@@ -8,6 +8,7 @@ public final class ArtBoot {
     private ArtBoot() {}
     static native void lockApplication(String packageName);
     static native void bindApplicationUid(int uid);
+    static native void setProcessName(String name);
     private static native void registerLaunchProfile(String name) throws java.io.IOException;
     static native void bindNativeLibraries(ClassLoader loader, String directory,String dataDirectory) throws java.io.IOException;
     static native long[] memoryInfo();
@@ -61,7 +62,11 @@ public final class ArtBoot {
             // The host keeps the APK resources and its data lock until the process exits.
         }
         // ActivityThread normally drains pending framework writes when an Activity stops.
-        Class.forName("android.app.QueuedWork").getMethod("waitToFinish").invoke(null);
+        finishPendingWrites();
         return 0;
+    }
+
+    static void finishPendingWrites() throws ReflectiveOperationException {
+        Class.forName("android.app.QueuedWork").getMethod("waitToFinish").invoke(null);
     }
 }

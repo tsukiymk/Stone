@@ -4,6 +4,8 @@ The system image provides Android resources read-only. Application code, private
 
 ## Shared volumes and application directories
 
+Before Application and provider initialization, Stone creates the private data root and its `device-protected` subdirectory. Device-protected contexts use that separate directory for preferences, files, and caches across launches. Both roots use the Windows file backend; this does not implement Android credential encryption or a locked-device boot phase. If either root cannot be created, launch fails with an explicit storage error.
+
 The primary volume's Android path is `/storage/emulated/0`, backed by `<data-dir>/storage/emulated/0` on the host. `/sdcard`, `/storage/self/primary`, and `/data/media/0` refer to the same volume.
 
 When initializing shared storage for an existing data root, Stone checks `<data-dir>/sdcard`, then `<data-dir>/data/media/0`, and moves the first existing directory to the primary volume path if that destination does not exist. An existing destination is neither overwritten nor merged with old data.
@@ -17,6 +19,8 @@ Applications can access their own app-specific external directories. Access else
 File descriptors, metadata, path normalization, links, and directory access preserve Android numeric and error semantics. Supported symlink/readlink operations use the Windows file backend. Unconnected operations fail explicitly rather than returning Windows errno values as Android errno.
 
 Java SharedMemory uses the image JNI and Stone's memfd backend for creation, mapping, size queries, and write seals. Current-process `/proc/self/fd/<fd>` and `/proc/<pid>/fd/<fd>` links identify registered memory files with their memfd names; duplicated descriptors retain that identity and closed descriptors no longer resolve. This does not expose arbitrary Windows paths or another process's descriptors.
+
+`/proc/self/cmdline` and `/proc/<current-pid>/cmdline` support read-only absolute-path opens, including `openat` and `fopen`. Each open reads an independent, NUL-terminated snapshot of the Android process name, set before Application initialization and including a private-process suffix when present. Before application identity is available, the name is `Stone`. These files do not expose the Windows command line, other processes, or general procfs directory traversal.
 
 inotify uses Windows asynchronous directory notifications. It supports nonrecursive creation, deletion, modification, and same-directory rename events, with queues, masks, and poll/epoll. Permission revocation clears pending data. Ordinary file watches, complete open/read events, and matching moves across directories remain limited.
 

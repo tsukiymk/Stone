@@ -1,3 +1,14 @@
+#include <cstring>
+
+namespace {
+unsigned validationEnabled = 1;
+
+void SetValidation(unsigned enabled)
+{
+    validationEnabled = enabled;
+}
+}
+
 extern "C" __declspec(dllexport) const char* eglQueryString(const void*, int name)
 {
     switch (name) {
@@ -15,7 +26,14 @@ extern "C" __declspec(dllexport) unsigned int eglGetError()
     return 0x3000;
 }
 
-extern "C" __declspec(dllexport) void* eglGetProcAddress(const char*)
+extern "C" __declspec(dllexport) void* eglGetProcAddress(const char* name)
 {
+    if (name && std::strcmp(name, "eglSetValidationEnabledANGLE") == 0)
+        return reinterpret_cast<void*>(&SetValidation);
     return nullptr;
+}
+
+extern "C" __declspec(dllexport) unsigned StoneTestEglValidationEnabled()
+{
+    return validationEnabled;
 }

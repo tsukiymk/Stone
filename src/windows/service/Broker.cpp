@@ -67,8 +67,15 @@ BOOL CALLBACK VisitWindow(HWND window, LPARAM parameter)
     DWORD pid = 0;
     GetWindowThreadProcessId(window, &pid);
     if (pid == request.pid && !GetWindow(window, GW_OWNER)) {
-        if (request.close)
+        if (request.close) {
+            wchar_t name[256]{};
+            GetClassNameW(window, name, 256);
+            // A directly launched Client can own a hidden console. Closing it
+            // terminates the process before its signaled Android cleanup runs.
+            if (lstrcmpW(name, L"ConsoleWindowClass") == 0)
+                return TRUE;
             PostMessageW(window, WM_CLOSE, 0, 0);
+        }
         else {
             ShowWindowAsync(window, SW_RESTORE);
             SetForegroundWindow(window);

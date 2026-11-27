@@ -15,6 +15,14 @@ final class ArtPermissions {
     static final String ACTION = "android.content.pm.action.REQUEST_PERMISSIONS";
     static final String NAMES = "android.content.pm.extra.REQUEST_PERMISSIONS_NAMES";
     static final String RESULTS = "android.content.pm.extra.REQUEST_PERMISSIONS_RESULTS";
+    static boolean networkGranted(ArtPackage apk,String name) {
+        return networkGranted(apk.packageInfo,name);
+    }
+    static boolean networkGranted(android.content.pm.PackageInfo info,String name) {
+        return ("android.permission.INTERNET".equals(name) || "android.permission.ACCESS_NETWORK_STATE".equals(name))
+            && info.requestedPermissions!=null
+            && java.util.Arrays.asList(info.requestedPermissions).contains(name);
+    }
     static boolean requestable(ArtPackage apk, String permission) {
         return NOTIFICATIONS.equals(permission) && apk.packageInfo.requestedPermissions != null
             && java.util.Arrays.asList(apk.packageInfo.requestedPermissions).contains(permission);

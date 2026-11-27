@@ -57,6 +57,7 @@ thread_local std::vector<jint> framePixels;
 thread_local HANDLE applicationLock = nullptr;
 thread_local HANDLE legacyApplicationLock = nullptr;
 thread_local HANDLE processApplicationLock = nullptr;
+std::function<void(int)> sessionExit;
 void Throw(JNIEnv* env, const char* name, const char* message);
 
 std::wstring NotificationText(JNIEnv* env, jstring value, jsize maximum)
@@ -844,27 +845,43 @@ bool RegisterArtFramework(JNIEnv* env)
 bool RegisterArtHost(JNIEnv* env)
 {
     InitializeClientServices();
-    const JNINativeMethod session[]{Native(
-                                        "commands", "()I",
-                                        +[](JNIEnv* env, jclass) -> jint {
-                                            try {
-                                                return ReadClientSessionCommands();
-                                            }
-                                            catch (const std::exception& error) {
-                                                Throw(env, "java/lang/IllegalStateException", error.what());
-                                                return 0;
-                                            }
-                                        }),
-                                    Native(
-                                        "retire", "()Z", +[](JNIEnv* env, jclass) -> jboolean {
-                                            try {
-                                                return RetireClientSession() ? JNI_TRUE : JNI_FALSE;
-                                            }
-                                            catch (const std::exception& error) {
-                                                Throw(env, "java/lang/IllegalStateException", error.what());
-                                                return JNI_FALSE;
-                                            }
-                                        })};
+    const JNINativeMethod session[]{
+        Native(
+            "commands", "()I",
+            +[](JNIEnv* env, jclass) -> jint {
+                try {
+                    return ReadClientSessionCommands();
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/lang/IllegalStateException", error.what());
+                    return 0;
+                }
+            }),
+        Native(
+            "retire", "()Z",
+            +[](JNIEnv* env, jclass) -> jboolean {
+                try {
+                    return RetireClientSession() ? JNI_TRUE : JNI_FALSE;
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/lang/IllegalStateException", error.what());
+                    return JNI_FALSE;
+                }
+            }),
+        Native(
+            "complete", "(I)V", +[](JNIEnv* env, jclass, jint result) {
+                if (result != 0 && result != 1) {
+                    Throw(env, "java/lang/IllegalArgumentException", "invalid session exit result");
+                    return;
+                }
+                if (!sessionExit) {
+                    Throw(env, "java/lang/UnsupportedOperationException",
+                          "ART session completion requires a Client exit handler");
+                    return;
+                }
+                sessionExit(result);
+                Throw(env, "java/lang/IllegalStateException", "Client exit handler returned");
+            })};
     if (!Bind(env, "com/trebledot/stone/runtime/ArtSession", session))
         return false;
     const JNINativeMethod pendingIntents[]{
@@ -1173,6 +1190,8 @@ bool RegisterArtHost(JNIEnv* env)
     if (!RegisterImageNative(env, "libhwui.so", "register_android_graphics_drawable_VectorDrawable"))
         return false;
     if (!RegisterImageNative(env, "libhwui.so", "register_android_graphics_drawable_AnimatedVectorDrawable"))
+        return false;
+    if (!RegisterImageNative(env, "libhwui.so", "register_android_graphics_HardwareRendererObserver"))
         return false;
     for (const auto* name :
          {"register_android_hardware_OverlayProperties", "register_android_hardware_display_DisplayManagerGlobal"}) {
@@ -1511,6 +1530,21 @@ bool RegisterArtHost(JNIEnv* env)
                 }
             }),
         Native(
+            "setProcessName", "(Ljava/lang/String;)V",
+            +[](JNIEnv* env, jclass, jstring name) {
+                try {
+                    if (!name)
+                        throw std::invalid_argument("Android process name is missing");
+                    const StringChars text(env, name);
+                    if (!text.Get())
+                        return;
+                    SetAndroidProcessName(text.Get());
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/lang/IllegalArgumentException", error.what());
+                }
+            }),
+        Native(
             "bindApplicationUid", "(I)V",
             +[](JNIEnv* env, jclass, jint uid) {
                 if (applicationLock || uid < 10000 || uid > 19999) {
@@ -1600,6 +1634,41 @@ bool RegisterArtHost(JNIEnv* env)
             }),
     };
     if (!Bind(env, "com/trebledot/stone/runtime/ArtBoot", application))
+        return false;
+    const JNINativeMethod webView[]{
+        Native(
+            "bindNativeLibraries", "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+            +[](JNIEnv* env, jclass, jobject loader, jstring source, jstring directory, jstring data) {
+                try {
+                    BindArtWebViewLibraries(env, loader, NotificationText(env, source, 32767),
+                                            NotificationText(env, directory, 32767),
+                                            NotificationText(env, data, 32767));
+                }
+                catch (const std::exception& error) {
+                    Throw(env, "java/io/IOException", error.what());
+                }
+            }),
+        Native(
+            "loadNativeLibrary", "(Ljava/lang/Class;Ljava/lang/String;)V",
+            +[](JNIEnv* env, jclass, jclass owner, jstring path) {
+                const auto type = ArtJni<&JNINativeInterface_::FindClass>(env, "java/lang/Runtime");
+                if (!type)
+                    return;
+                const auto get =
+                    ArtJni<&JNINativeInterface_::GetStaticMethodID>(env, type, "getRuntime", "()Ljava/lang/Runtime;");
+                const auto load = get ? ArtJni<&JNINativeInterface_::GetMethodID>(
+                                            env, type, "load0", "(Ljava/lang/Class;Ljava/lang/String;)V")
+                                      : nullptr;
+                const auto runtime =
+                    load ? ArtJni<&JNINativeInterface_::CallStaticObjectMethodA>(env, type, get, nullptr) : nullptr;
+                if (runtime) {
+                    const jvalue arguments[]{jvalue{.l = owner}, jvalue{.l = path}};
+                    ArtJni<&JNINativeInterface_::CallVoidMethodA>(env, runtime, load, arguments);
+                    ArtJni<&JNINativeInterface_::DeleteLocalRef>(env, runtime);
+                }
+                ArtJni<&JNINativeInterface_::DeleteLocalRef>(env, type);
+            })};
+    if (!Bind(env, "com/trebledot/stone/runtime/ArtWebView", webView))
         return false;
     const JNINativeMethod storage[]{
         Native(
@@ -2161,5 +2230,12 @@ bool RegisterArtHost(JNIEnv* env)
             }),
     };
     return Bind(env, "com/trebledot/stone/runtime/ArtSettingsConfirmation", settings);
+}
+
+void ConfigureArtSessionExit(std::function<void(int)> exit)
+{
+    if (!exit || sessionExit)
+        throw std::logic_error("ART session exit handler must be configured exactly once");
+    sessionExit = std::move(exit);
 }
 }

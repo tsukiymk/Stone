@@ -603,6 +603,11 @@ static void RunArtAppSample(const std::filesystem::path& directory, const std::f
     CopyReadOnlyCode(fs::canonical(dex), data / "probe.dex");
     CopyReadOnlyCode(fs::canonical(apk), data / "application.apk");
     CopyReadOnlyCode(fs::canonical(artHost), data / "stone-art-runtime.jar");
+    if (std::string_view(probeClass) == "com/trebledot/stone/runtime/WebViewProviderProbe") {
+        for (const auto* name : {"v2.apk", "unsigned.apk", "tampered-v2.apk", "launcher.apk"})
+            CopyReadOnlyCode(fs::canonical(dex.parent_path().parent_path() / "archives" / name),
+                             data / "webview-fixtures" / name);
+    }
     if (argument == L"codecs")
         CopyReadOnlyCode(fs::canonical(dex.parent_path() / L"opus-fixture.webm"), data / L"opus-fixture.webm");
     if (argument == L"video") {
@@ -951,6 +956,13 @@ void TestArtResizeWindowSample(const std::filesystem::path& directory, const std
                     L"resize-window-sample-data", L"");
 }
 
+void TestArtWebViewProviderSample(const std::filesystem::path& directory, const std::filesystem::path& dex,
+                                  const std::filesystem::path& apk, const std::filesystem::path& artHost)
+{
+    RunArtAppSample(directory, dex, apk, artHost, "com/trebledot/stone/runtime/WebViewProviderProbe",
+                    L"webview-provider-sample-data", L"");
+}
+
 void TestArtStartupServicesSample(const std::filesystem::path& directory, const std::filesystem::path& dex,
                                   const std::filesystem::path& apk, const std::filesystem::path& artHost,
                                   bool nativeOnly, bool videoCodecs)
@@ -994,8 +1006,8 @@ void TestArtStorageSample(const std::filesystem::path& directory, const std::fil
                           const std::filesystem::path& apk, const std::filesystem::path& artHost,
                           std::wstring_view stage)
 {
-    if (stage != L"write" && stage != L"read")
-        throw std::invalid_argument("Storage probe stage must be write or read");
+    if (stage != L"write" && stage != L"read" && stage != L"private-write" && stage != L"private-read")
+        throw std::invalid_argument("Storage probe stage must be write, read, private-write or private-read");
     RunArtAppSample(directory, dex, apk, artHost, "com/trebledot/stone/probe/StorageSample", L"storage-sample-data",
                     stage);
 }
@@ -1077,6 +1089,12 @@ void TestArtRuntime(const std::filesystem::path& directory, const std::filesyste
         GetEnvironmentVariableW(L"STONE_ART_PROBE_ONLY_PACKAGES", packageProbe, 2) == 1 && packageProbe[0] == L'1';
     if (onlyPackages)
         options.vmOptions.push_back("-Dstone.probe.only-packages=true");
+    wchar_t installSourceProbe[2]{};
+    const bool onlyInstallSources =
+        onlyPackages && GetEnvironmentVariableW(L"STONE_ART_PROBE_ONLY_INSTALL_SOURCES", installSourceProbe, 2) == 1 &&
+        installSourceProbe[0] == L'1';
+    if (onlyInstallSources)
+        options.vmOptions.push_back("-Dstone.probe.only-install-sources=true");
     wchar_t switchProbe[2]{}, localeBenchmark[2]{};
     if (GetEnvironmentVariableW(L"STONE_ART_PROBE_SWITCH_INTERPRETER", switchProbe, 2) == 1 && switchProbe[0] == L'1')
         options.vmOptions.push_back("-Xint");
@@ -1790,6 +1808,15 @@ void TestArtRuntime(const std::filesystem::path& directory, const std::filesyste
             STONE_CHECK(stats.instructions);
         std::cout << "ART JIT publication: methods=" << stats.methods << " GS=" << stats.instructions
                   << " TLS-recoveries=" << stats.tlsRecoveries << " breakpoints=" << stats.breakpoints << '\n';
+    }
+    if (onlyInstallSources) {
+        // As in RunArtAppSample, this isolated Application probe does not wait
+        // for APK-owned executors in DestroyJavaVM. VM teardown is not tested.
+        STONE_CHECK(GetModuleHandleW(L"jvm.dll") == nullptr);
+        StopClientApplicationLogs();
+        std::cout << "ART install-source probe passed without a host JVM.\n" << std::flush;
+        std::cerr << std::flush;
+        ExitProcess(0);
     }
     STONE_CHECK(runtime.Shutdown() == JNI_OK);
     STONE_CHECK(GetModuleHandleW(L"jvm.dll") == nullptr);
